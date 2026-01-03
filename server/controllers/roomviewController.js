@@ -10,7 +10,7 @@ exports.getAllRooms = async (req, res) => {
   }
 };
 
-// GET single room by ID
+// GET room by ID
 exports.getRoomById = async (req, res) => {
   try {
     const room = await RoomView.findById(req.params.id);
@@ -18,5 +18,16 @@ exports.getRoomById = async (req, res) => {
     res.json(room);
   } catch (err) {
     res.status(500).json({ message: err.message });
+  }
+};
+
+// POST new room
+exports.createRoom = async (req, res) => {
+  try {
+    const newRoom = new RoomView(req.body);
+    const savedRoom = await newRoom.save();
+    res.status(201).json(savedRoom);
+  } catch (err) {
+    res.status(400).json({ message: err.message });
   }
 };
