@@ -6,8 +6,9 @@ const roomSchema = new mongoose.Schema({
   description: { type: String, required: true },
   images: [{ type: String }],
   amenities: [{ type: String }]
-}, { timestamps: true });
+});
 
+// avoid overwrite in watch mode
 const RoomView = mongoose.models.RoomView || mongoose.model("RoomView", roomSchema);
 
 module.exports = RoomView;
