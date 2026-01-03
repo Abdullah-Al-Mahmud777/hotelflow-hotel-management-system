@@ -15,12 +15,14 @@ mongoose
 
 // 🔹 Base route
 app.get("/", (req, res) => {
-  res.send("HotelFlow API is running 🚀");
+  res.send("HotelFlow API is running ");
 });
 
 // 🔹 Room routes (IMPORTANT)
 const roomRoutes = require("./routes/roomRoutes");
 app.use("/api/rooms", roomRoutes);
+const roomviewRoutes = require("./routes/roomviewRoutes");
+app.use("/api/roomviews", roomviewRoutes);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
