@@ -1,58 +1,84 @@
-HotelFlow is a robust, full-stack web application designed to streamline hotel operations. It allows administrators to manage room inventories and users to browse and book accommodations seamlessly.
-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-Frontend (Client Side)
-Next.js: A powerful React framework used for building a fast, SEO-friendly, and responsive user interface.
+# 🏨 HotelFlow - Hotel Management System
 
-Key Features: Server-Side Rendering (SSR), optimized image loading, and dynamic routing for room details.
+![Next.js](https://img.shields.io/badge/Next.js-000000?style=for-the-badge&logo=nextdotjs&logoColor=white)
+![Node.js](https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=nodedotjs&logoColor=white)
+![MongoDB](https://img.shields.io/badge/MongoDB-47A248?style=for-the-badge&logo=mongodb&logoColor=white)
+![Express.js](https://img.shields.io/badge/Express.js-000000?style=for-the-badge&logo=express&logoColor=white)
 
-Backend (Server Side)
-Node.js & Express.js: The core engine handling the application logic and RESTful API development.
+**HotelFlow** is a robust, full-stack web application designed to streamline hotel operations. It allows administrators to manage room inventories efficiently while providing users with a seamless experience to browse and book accommodations.
 
-Key Features: Efficient request handling, custom middleware for data validation, and secure API endpoints.
+---
 
-Database (Data Storage)
-MongoDB & Mongoose: A NoSQL database used to store flexible data like room types, pricing, and availability.
+## 🛠️ Tech Stack
 
-Key Features: Schema-based validation using Mongoose and high-speed data retrieval.
+### **Frontend (Client Side)**
+* **Framework:** **Next.js** (App Router)
+* **Styling:** Tailwind CSS (Responsive & Modern UI)
+* **Key Features:** Server-Side Rendering (SSR), Optimized Image Loading, and Dynamic Routing for room details.
 
-feature:
-----------------------------------
-1.১. User (Guest) Side Features:
-Room Browsing & Filtering: 
-Detailed Room View
-Booking System
-Booking History
-Review & Rating
+### **Backend (Server Side)**
+* **Environment:** **Node.js**
+* **Framework:** **Express.js**
+* **Key Features:** Efficient RESTful API development, custom middleware for data validation, and secure endpoints.
 
-2.Admin Dashboard Features
-1.Statistic Overview (Charts)
-2.Room Management (CRUD)
-3.Booking Management
-4.User/Guest Management
-5.Search Functionality
+### **Database (Data Storage)**
+* **Database:** **MongoDB** (NoSQL)
+* **ODM:** **Mongoose**
+* **Key Features:** Schema-based validation and high-speed data retrieval for room pricing and availability.
 
+---
 
+## ✨ Features
 
+### 👤 1. User (Guest) Side
+- [x] **Room Browsing & Filtering:** Search rooms by type, price range, and availability.
+- [x] **Detailed Room View:** High-quality images, descriptions, and amenities.
+- [x] **Booking System:** Seamless date-based booking interface.
+- [x] **Booking History:** Tracking of past and upcoming stays.
+- [x] **Review & Rating:** User feedback system for service improvement.
 
-how to run this project 
------------------------------
+### 🛡️ 2. Admin Dashboard
+- [x] **Statistic Overview:** Business growth visualization using interactive **Charts**.
+- [x] **Room Management (CRUD):** Full control over creating, updating, and deleting rooms.
+- [x] **Booking Management:** Real-time management of guest reservations.
+- [x] **User Management:** Monitoring guest profiles and roles.
+- [x] **Global Search:** Instant search for rooms, users, or booking IDs.
 
-1. Backend (Node.js/Express)
-Open your terminal in the server folder.
+---
 
-Install dependencies: npm install
+## 🚀 How to Run the Project
 
-Set your MONGO_URI in the .env file.
+Follow these steps to set up the project on your local machine.
 
-Start the server: npm run dev (or node server.js).
+### **1. Prerequisites**
+* Install [Node.js](https://nodejs.org/) (Latest Version)
+* A [MongoDB Atlas](https://www.mongodb.com/cloud/atlas) account or Local MongoDB.
+`
+### The project set up:
+```
+### **2. Frontend setup**
 
-Running on: http://localhost:5000
+# Navigate to client directory
+cd client
 
-2. Frontend (Next.js)
-Open a new terminal in the client folder.
+# Install dependencies
+npm install
 
-Install dependencies: npm install
+# Start the development server
+npm run dev
 
-Start the development server: npm run dev
+### **2. Backend Setup**
 
-Running on: http://localhost:3000
+# Navigate to server directory
+cd server
+
+# Install dependencies
+npm install
+
+# Create a .env file and add your credentials
+PORT=5000
+MONGO_URI=your_mongodb_connection_string
+
+# Start the server (Development mode)
+npm run dev
+
