@@ -5,10 +5,10 @@ const nextConfig = {
   },
   // Optimize for production
   reactStrictMode: true,
-  // Enable SWC minification
-  swcMinify: true,
   // Disable x-powered-by header
   poweredByHeader: false,
+  // Ensure proper routing
+  trailingSlash: false,
 };
 
 module.exports = nextConfig;
