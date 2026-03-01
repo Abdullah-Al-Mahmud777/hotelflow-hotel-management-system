@@ -33,6 +33,9 @@ app.use("/api/roomviews", roomviewRoutes);
 const bookRoute= require("./routes/bookroute");
 app.use("/api/book", bookRoute);
 
+
+
+
 // error handling middleware
 const errorHandler = require("./middlewares/error.middleware");
 
