@@ -41,9 +41,38 @@ mongoose
   .then(() => console.log("MongoDB Atlas connected ✅ (Database: hotelflow_db)"))
   .catch((err) => console.log("MongoDB Atlas connection error:", err));
 
+// Base route
+app.get("/", (req, res) => {
+  res.json({
+    success: true,
+    message: "HotelFlow API is running 🚀",
+    version: "1.0.0",
+    database: "MongoDB Atlas Connected",
+    endpoints: {
+      base: "/",
+      health: "/health"
+    }
+  });
+});
 
+// Health check route
+app.get("/health", (req, res) => {
+  res.json({
+    success: true,
+    status: "healthy",
+    timestamp: new Date().toISOString(),
+    database: mongoose.connection.readyState === 1 ? "connected" : "disconnected"
+  });
+});
 
-
+// 404 handler
+app.use((req, res) => {
+  res.status(404).json({
+    success: false,
+    message: "Route not found",
+    path: req.path
+  });
+});
 
 // Start the server
 const PORT = process.env.PORT || 5000;

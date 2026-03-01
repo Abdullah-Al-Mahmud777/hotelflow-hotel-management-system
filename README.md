@@ -6,137 +6,154 @@
 ![Express.js](https://img.shields.io/badge/Express.js-000000?style=for-the-badge&logo=express&logoColor=white)
 ![Vercel](https://img.shields.io/badge/Vercel-000000?style=for-the-badge&logo=vercel&logoColor=white)
 
-**HotelFlow** is a robust, full-stack web application designed to streamline hotel operations. It allows administrators to manage room inventories efficiently while providing users with a seamless experience to browse and book accommodations.
-
----
-
-## 🚀 Quick Links
-
-- 🎯 **[START HERE](./START_HERE.md)** - শুরু করার জন্য এখানে click করুন
-- 📚 **[Documentation Index](./INDEX.md)** - সব documentation এক জায়গায়
-- ⚡ **[Quick Deploy Guide](./QUICK_START.md)** - 15 মিনিটে deploy করুন
-- 📖 **[Complete Deployment Guide](./DEPLOYMENT.md)** - বিস্তারিত guide (Bangla)
-- ✅ **[Deployment Checklist](./VERCEL_CHECKLIST.md)** - Step by step checklist
-- 🛠️ **[Local Setup Guide](./SETUP.md)** - Development setup
-- 🏗️ **[Architecture](./ARCHITECTURE.md)** - System architecture
+**HotelFlow** is a robust, full-stack web application designed to streamline hotel operations.
 
 ---
 
 ## 🛠️ Tech Stack
 
-### **Frontend (Client Side)**
-* **Framework:** **Next.js** (App Router)
-* **Styling:** Tailwind CSS (Responsive & Modern UI)
-* **Key Features:** Server-Side Rendering (SSR), Optimized Image Loading, and Dynamic Routing for room details.
+### Frontend
+* **Framework:** Next.js 16 (App Router)
+* **Styling:** Tailwind CSS 4
+* **Language:** TypeScript 5
+* **Deployment:** Vercel
 
-### **Backend (Server Side)**
-* **Environment:** **Node.js**
-* **Framework:** **Express.js**
-* **Key Features:** Efficient RESTful API development, custom middleware for data validation, and secure endpoints.
+### Backend
+* **Runtime:** Node.js
+* **Framework:** Express.js 5
+* **Language:** JavaScript
+* **Deployment:** Vercel Serverless
 
-### **Database (Data Storage)**
-* **Database:** **MongoDB** (NoSQL)
-* **ODM:** **Mongoose**
-* **Key Features:** Schema-based validation and high-speed data retrieval for room pricing and availability.
-
----
-
-## ✨ Features
-
-### 👤 1. User (Guest) Side
-- [x] **Room Browsing & Filtering:** Search rooms by type, price range, and availability.
-- [x] **Detailed Room View:** High-quality images, descriptions, and amenities.
-- [x] **Booking System:** Seamless date-based booking interface.
-- [x] **Booking History:** Tracking of past and upcoming stays.
-- [x] **Review & Rating:** User feedback system for service improvement.
-
-### 🛡️ 2. Admin Dashboard
-- [x] **Statistic Overview:** Business growth visualization using interactive **Charts**.
-- [x] **Room Management (CRUD):** Full control over creating, updating, and deleting rooms.
-- [x] **Booking Management:** Real-time management of guest reservations.
-- [x] **User Management:** Monitoring guest profiles and roles.
-- [x] **Global Search:** Instant search for rooms, users, or booking IDs.
+### Database
+* **Database:** MongoDB Atlas (Cloud)
+* **ODM:** Mongoose 9
 
 ---
 
-## 🚀 How to Run the Project
+## 🚀 Vercel Deployment
 
-Follow these steps to set up the project on your local machine.
+### Prerequisites
+1. [Vercel Account](https://vercel.com)
+2. [MongoDB Atlas Account](https://www.mongodb.com/cloud/atlas)
+3. GitHub repository
 
-### **1. Prerequisites**
-* Install [Node.js](https://nodejs.org/) (Latest Version)
-* A [MongoDB Atlas](https://www.mongodb.com/cloud/atlas) account or Local MongoDB.
-`
-### **2. Backend Setup**
+### Step 1: MongoDB Atlas
+1. Create free cluster at [MongoDB Atlas](https://cloud.mongodb.com)
+2. Create database user
+3. Whitelist IP: `0.0.0.0/0`
+4. Get connection string
 
+### Step 2: Deploy Backend
+1. [Vercel Dashboard](https://vercel.com/dashboard) → Add New Project
+2. Import GitHub repository
+3. **Root Directory:** `server`
+4. **Framework:** Other
+5. **Environment Variables:**
+```env
+MONGO_URI=mongodb+srv://username:password@cluster.mongodb.net/hotelflow_db
+PORT=5000
+JWT_SECRET=your_secret_key
+NODE_ENV=production
+```
+6. Deploy → Copy backend URL
+
+### Step 3: Deploy Frontend
+1. [Vercel Dashboard](https://vercel.com/dashboard) → Add New Project
+2. Import same repository
+3. **Root Directory:** `client`
+4. **Framework:** Next.js (auto-detected)
+5. **Environment Variables:**
+```env
+NEXT_PUBLIC_API_URL=https://your-backend.vercel.app
+```
+6. Deploy → Copy frontend URL
+
+### Step 4: Update CORS
+Backend project → Settings → Environment Variables:
+```env
+FRONTEND_URL=https://your-frontend.vercel.app
+```
+Redeploy backend
+
+---
+
+## 💻 Local Development
+
+### Backend Setup
 ```bash
-# Navigate to server directory
 cd server
-
-# Install dependencies
 npm install
-
-# Create a .env file and add your credentials
 cp .env.example .env
-# Edit .env file with your MongoDB URI and JWT secret
-
-# Start the server (Development mode)
+# Edit .env with your MongoDB URI
 npm run dev
 ```
 
-### **3. Frontend Setup**
-
+### Frontend Setup
 ```bash
-# Navigate to client directory
 cd client
-
-# Install dependencies
 npm install
-
-# Create environment file
 cp .env.example .env.local
-# Edit .env.local with your backend API URL
-
-# Start the development server
+# Edit .env.local with backend URL
 npm run dev
 ```
 
+### Access
+- Frontend: http://localhost:3000
+- Backend: http://localhost:5000
+
 ---
 
-## 🚀 Deployment
+## 📁 Project Structure
 
-### Vercel Deployment (Recommended)
-
-আপনার frontend এবং backend Vercel এ deploy করতে:
-
-📖 **বিস্তারিত গাইড:** [DEPLOYMENT.md](./DEPLOYMENT.md) (Bangla)
-
-⚡ **Quick Start:** [QUICK_START.md](./QUICK_START.md) - 15 মিনিটে deploy করুন
-
-✅ **Checklist:** [VERCEL_CHECKLIST.md](./VERCEL_CHECKLIST.md) - Step by step checklist
-
-### Quick Deploy Commands
-
-```bash
-# Install Vercel CLI
-npm i -g vercel
-
-# Deploy backend
-cd server
-vercel
-
-# Deploy frontend
-cd client
-vercel
+```
+hotelflow/
+├── client/          # Next.js Frontend
+│   ├── app/        # App router pages
+│   ├── lib/        # API utilities
+│   └── package.json
+│
+├── server/          # Express Backend
+│   ├── server.js   # Main server file
+│   ├── vercel.json # Vercel config
+│   └── package.json
+│
+└── README.md
 ```
 
 ---
 
-## 📁 Project Files
+## 🔧 Configuration Files
 
 - `server/vercel.json` - Backend Vercel configuration
-- `client/lib/api.ts` - Frontend API utility
-- `.env.example` - Environment variable templates
-- `DEPLOYMENT.md` - Complete deployment guide (Bangla)
-- `SETUP.md` - Local development setup guide
+- `client/next.config.ts` - Next.js configuration
+- `client/lib/api.ts` - API client utility
+- `.env.example` - Environment templates
+- `.vercelignore` - Vercel ignore rules
 
+---
+
+## 🌐 Environment Variables
+
+### Backend (.env)
+```env
+MONGO_URI=mongodb+srv://...
+PORT=5000
+JWT_SECRET=your_secret
+NODE_ENV=development
+FRONTEND_URL=http://localhost:3000
+```
+
+### Frontend (.env.local)
+```env
+NEXT_PUBLIC_API_URL=http://localhost:5000
+```
+
+---
+
+## 📝 License
+
+MIT License
+
+---
+
+**Built with ❤️ using Next.js, Express.js, and MongoDB**
