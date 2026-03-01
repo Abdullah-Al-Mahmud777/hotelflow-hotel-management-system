@@ -4,8 +4,21 @@
 ![Node.js](https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=nodedotjs&logoColor=white)
 ![MongoDB](https://img.shields.io/badge/MongoDB-47A248?style=for-the-badge&logo=mongodb&logoColor=white)
 ![Express.js](https://img.shields.io/badge/Express.js-000000?style=for-the-badge&logo=express&logoColor=white)
+![Vercel](https://img.shields.io/badge/Vercel-000000?style=for-the-badge&logo=vercel&logoColor=white)
 
 **HotelFlow** is a robust, full-stack web application designed to streamline hotel operations. It allows administrators to manage room inventories efficiently while providing users with a seamless experience to browse and book accommodations.
+
+---
+
+## 🚀 Quick Links
+
+- 🎯 **[START HERE](./START_HERE.md)** - শুরু করার জন্য এখানে click করুন
+- 📚 **[Documentation Index](./INDEX.md)** - সব documentation এক জায়গায়
+- ⚡ **[Quick Deploy Guide](./QUICK_START.md)** - 15 মিনিটে deploy করুন
+- 📖 **[Complete Deployment Guide](./DEPLOYMENT.md)** - বিস্তারিত guide (Bangla)
+- ✅ **[Deployment Checklist](./VERCEL_CHECKLIST.md)** - Step by step checklist
+- 🛠️ **[Local Setup Guide](./SETUP.md)** - Development setup
+- 🏗️ **[Architecture](./ARCHITECTURE.md)** - System architecture
 
 ---
 
@@ -54,21 +67,9 @@ Follow these steps to set up the project on your local machine.
 * Install [Node.js](https://nodejs.org/) (Latest Version)
 * A [MongoDB Atlas](https://www.mongodb.com/cloud/atlas) account or Local MongoDB.
 `
-### The project set up:
-```
-### **2. Frontend setup**
-
-# Navigate to client directory
-cd client
-
-# Install dependencies
-npm install
-
-# Start the development server
-npm run dev
-
 ### **2. Backend Setup**
 
+```bash
 # Navigate to server directory
 cd server
 
@@ -76,9 +77,66 @@ cd server
 npm install
 
 # Create a .env file and add your credentials
-PORT=5000
-MONGO_URI=your_mongodb_connection_string
+cp .env.example .env
+# Edit .env file with your MongoDB URI and JWT secret
 
 # Start the server (Development mode)
 npm run dev
+```
+
+### **3. Frontend Setup**
+
+```bash
+# Navigate to client directory
+cd client
+
+# Install dependencies
+npm install
+
+# Create environment file
+cp .env.example .env.local
+# Edit .env.local with your backend API URL
+
+# Start the development server
+npm run dev
+```
+
+---
+
+## 🚀 Deployment
+
+### Vercel Deployment (Recommended)
+
+আপনার frontend এবং backend Vercel এ deploy করতে:
+
+📖 **বিস্তারিত গাইড:** [DEPLOYMENT.md](./DEPLOYMENT.md) (Bangla)
+
+⚡ **Quick Start:** [QUICK_START.md](./QUICK_START.md) - 15 মিনিটে deploy করুন
+
+✅ **Checklist:** [VERCEL_CHECKLIST.md](./VERCEL_CHECKLIST.md) - Step by step checklist
+
+### Quick Deploy Commands
+
+```bash
+# Install Vercel CLI
+npm i -g vercel
+
+# Deploy backend
+cd server
+vercel
+
+# Deploy frontend
+cd client
+vercel
+```
+
+---
+
+## 📁 Project Files
+
+- `server/vercel.json` - Backend Vercel configuration
+- `client/lib/api.ts` - Frontend API utility
+- `.env.example` - Environment variable templates
+- `DEPLOYMENT.md` - Complete deployment guide (Bangla)
+- `SETUP.md` - Local development setup guide
 
