@@ -5,11 +5,11 @@ require("dotenv").config();
 
 const app = express();
 
-// CORS configuration
+// CORS configuration - Allowing your live Next.js frontend
 const allowedOrigins = process.env.NODE_ENV === 'production' 
   ? [
       process.env.FRONTEND_URL,
-      'https://your-frontend-name.vercel.app'
+      'https://hotelflow-hotel-management-system-d.vercel.app' // Your frontend URL
     ].filter(Boolean)
   : [
       'http://localhost:3000',
@@ -18,11 +18,13 @@ const allowedOrigins = process.env.NODE_ENV === 'production'
 
 const corsOptions = {
   origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
     
     if (allowedOrigins.indexOf(origin) !== -1) {
       callback(null, true);
     } else {
+      console.log("Blocked by CORS:", origin);
       callback(new Error('Not allowed by CORS'));
     }
   },
@@ -39,7 +41,7 @@ mongoose
   .then(() => console.log("MongoDB Atlas connected ✅ (Database: hotelflow_db)"))
   .catch((err) => console.log("MongoDB Atlas connection error:", err));
 
-// Base route
+// Base health check route
 app.get("/", (req, res) => {
   res.json({
     success: true,
@@ -49,7 +51,7 @@ app.get("/", (req, res) => {
   });
 });
 
-// Start server
+// Start the server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   const environment = process.env.NODE_ENV === 'production' ? 'Production' : 'Development';
