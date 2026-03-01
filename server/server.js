@@ -4,50 +4,59 @@ const mongoose = require("mongoose");
 require("dotenv").config();
 
 const app = express();
-app.use(cors());
+
+// CORS configuration
+const allowedOrigins = process.env.NODE_ENV === 'production' 
+  ? [
+      process.env.FRONTEND_URL,
+      'https://your-frontend-name.vercel.app'
+    ].filter(Boolean)
+  : [
+      'http://localhost:3000',
+      'http://localhost:3001'
+    ];
+
+const corsOptions = {
+  origin: function (origin, callback) {
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+  optionsSuccessStatus: 200
+};
+
+app.use(cors(corsOptions));
 app.use(express.json());
 
-
-
-
-// MongoDB connect
+// MongoDB Atlas connection
 mongoose
   .connect(process.env.MONGO_URI)
-  .then(() => console.log("MongoDB connected ✅"))
-  .catch((err) => console.log("MongoDB connection error:", err));
+  .then(() => console.log("MongoDB Atlas connected ✅ (Database: hotelflow_db)"))
+  .catch((err) => console.log("MongoDB Atlas connection error:", err));
 
-// 🔹 Base route
+// Base route
 app.get("/", (req, res) => {
-  res.send("HotelFlow API is running ");
+  res.json({
+    success: true,
+    message: "HotelFlow API is running 🚀",
+    version: "1.0.0",
+    database: "MongoDB Atlas Connected"
+  });
 });
 
-// 🔹 Room routes (IMPORTANT)
-const roomRoutes = require("./routes/roomRoutes");
-app.use("/api/rooms", roomRoutes);
-// roomview   routes
-
-const roomviewRoutes = require("./routes/roomviewRoutes");
-app.use("/api/roomviews", roomviewRoutes);
-
-// bookroutes
-const bookRoute= require("./routes/bookroute");
-app.use("/api/book", bookRoute);
-
-
-
-
-// error handling middleware
-const errorHandler = require("./middlewares/error.middleware");
-
-
-// use error handling middleware
-app.use(errorHandler);
-
-
-
-// start server
-
+// Start server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
+  const environment = process.env.NODE_ENV === 'production' ? 'Production' : 'Development';
+  console.log(`🚀 HotelFlow API Server running in ${environment} mode`);
+  console.log(`📡 Port: ${PORT}`);
+  console.log(`🌐 Local: http://localhost:${PORT}`);
+  if (process.env.NODE_ENV === 'production') {
+    console.log(`🔗 Production URL: Check Vercel Dashboard`);
+  }
 });
