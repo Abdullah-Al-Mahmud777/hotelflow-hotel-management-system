@@ -41,15 +41,9 @@ mongoose
   .then(() => console.log("MongoDB Atlas connected ✅ (Database: hotelflow_db)"))
   .catch((err) => console.log("MongoDB Atlas connection error:", err));
 
-// Base health check route
-app.get("/", (req, res) => {
-  res.json({
-    success: true,
-    message: "HotelFlow API is running 🚀",
-    version: "1.0.0",
-    database: "MongoDB Atlas Connected"
-  });
-});
+
+
+
 
 // Start the server
 const PORT = process.env.PORT || 5000;
