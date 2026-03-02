@@ -1,0 +1,83 @@
+const Booking = require('../models/Booking');
+const Room = require('../models/Room');
+
+// Create booking
+exports.createBooking = async (req, res) => {
+  try {
+    const { room, checkIn, checkOut, guestName, guestEmail, guestPhone } = req.body;
+    
+    // Check if room exists
+    const roomData = await Room.findById(room);
+    if (!roomData) {
+      return res.status(404).json({
+        success: false,
+        message: 'Room not found'
+      });
+    }
+    
+    // Check availability
+    const checkInDate = new Date(checkIn);
+    const checkOutDate = new Date(checkOut);
+    
+    const existingBooking = await Booking.findOne({
+      room,
+      status: { $ne: 'cancelled' },
+      $or: [
+        { checkIn: { $lte: checkOutDate }, checkOut: { $gte: checkInDate } }
+      ]
+    });
+    
+    if (existingBooking) {
+      return res.status(400).json({
+        success: false,
+        message: 'Room is not available for selected dates'
+      });
+    }
+    
+    // Calculate total price
+    const days = Math.ceil((checkOutDate - checkInDate) / (1000 * 60 * 60 * 24));
+    const totalPrice = days * roomData.price;
+    
+    const booking = await Booking.create({
+      room,
+      checkIn: checkInDate,
+      checkOut: checkOutDate,
+      guestName,
+      guestEmail,
+      guestPhone,
+      totalPrice
+    });
+    
+    await booking.populate('room');
+    
+    res.status(201).json({
+      success: true,
+      data: booking
+    });
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      message: 'Error creating booking',
+      error: error.message
+    });
+  }
+};
+
+// Get all bookings
+exports.getBookings = async (req, res) => {
+  try {
+    const bookings = await Booking.find().populate('room').sort({ createdAt: -1 });
+    
+    res.json({
+      success: true,
+      count: bookings.length,
+      data: bookings
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching bookings',
+      error: error.message
+    });
+  }
+};

@@ -41,6 +41,13 @@ mongoose
   .then(() => console.log("MongoDB Atlas connected ✅ (Database: hotelflow_db)"))
   .catch((err) => console.log("MongoDB Atlas connection error:", err));
 
+// Routes
+const roomRoutes = require('./routes/roomRoutes');
+const bookingRoutes = require('./routes/bookingRoutes');
+
+app.use('/api/rooms', roomRoutes);
+app.use('/api/bookings', bookingRoutes);
+
 // Base route
 app.get("/", (req, res) => {
   res.json({
@@ -50,7 +57,10 @@ app.get("/", (req, res) => {
     database: "MongoDB Atlas Connected",
     endpoints: {
       base: "/",
-      health: "/health"
+      health: "/health",
+      rooms: "/api/rooms",
+      featuredRooms: "/api/rooms/featured",
+      bookings: "/api/bookings"
     }
   });
 });
