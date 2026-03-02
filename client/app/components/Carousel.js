@@ -106,21 +106,21 @@ export default function Carousel({ images, autoPlay = true, interval = 5000 }) {
 export function TestimonialsCarousel() {
   const testimonials = [
     {
-      name: "maruf hossian",
+      name: "popu",
       role: "Business Traveler",
       image: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=200",
       text: "Exceptional service and stunning rooms. HotelFlow made my business trip feel like a luxury vacation.",
       rating: 5
     },
     {
-      name: "rifat hossina",
+      name: "moro",
       role: "Vacation Guest",
       image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=200",
       text: "The booking process was seamless, and the staff went above and beyond. Highly recommend!",
       rating: 5
     },
     {
-      name: "ayan ",
+      name: "mac ",
       role: "Honeymoon Couple",
       image: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&q=80&w=200",
       text: "Our honeymoon suite was perfect. Every detail was thoughtfully arranged. Unforgettable experience!",
