@@ -141,6 +141,32 @@ NEXT_PUBLIC_API_URL=http://localhost:5000
 ```
 
 ---
+### feature 
+User Module (The Guest Journey)
+Smart Search: Filter by date, price, and room type (Deluxe/Suite).
+
+Live Booking: Interactive calendar to see available dates instantly.
+
+Guest Dashboard: Manage active bookings and view past stay history.
+
+Secure Payment: Fast checkout using Stripe or SSLCommerz.
+
+Auto-Receipts: Instant PDF invoice generation after payment.
+
+Post-Stay Reviews: Verified rating system for completed stays.
+
+2. Admin Module (The Command Center)
+Analytics Dashboard: Visual charts for daily revenue and occupancy rates.
+
+Room Control (CRUD): Add/edit rooms, set prices, and toggle "Maintenance" mode.
+
+Booking Manager: View, confirm, or cancel guest reservations.
+
+Role-Based Access: Separate logins for Admins, Receptionists, and Cleaners.
+
+One-Click Desk: Fast "Check-in/Check-out" buttons for front-desk staff.
+
+Inventory Alerts: Low-stock notifications for hotel supplies.
 
 ## 📝 License
 
