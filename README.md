@@ -15,7 +15,7 @@
 ### Frontend
 * **Framework:** Next.js 16 (App Router)
 * **Styling:** Tailwind CSS 4
-* **Language:** TypeScript 5
+* **Language:** javascript
 * **Deployment:** Vercel
 
 ### Backend
