@@ -49,12 +49,7 @@
 3. **Root Directory:** `server`
 4. **Framework:** Other
 5. **Environment Variables:**
-```env
-MONGO_URI=mongodb+srv://username:password@cluster.mongodb.net/hotelflow_db
-PORT=5000
-JWT_SECRET=your_secret_key
-NODE_ENV=production
-```
+
 6. Deploy → Copy backend URL
 
 ### Step 3: Deploy Frontend
