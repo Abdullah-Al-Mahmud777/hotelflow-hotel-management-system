@@ -35,7 +35,6 @@ export default function RegisterPage() {
     }
 
     try {
-      // TODO: Implement registration API call
       console.log("Registration data:", formData);
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1000));
@@ -53,8 +52,8 @@ export default function RegisterPage() {
       <main className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center px-4 py-24">
         <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8">
           <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-gray-800 mb-2">Create Account</h1>
-            <p className="text-gray-600">Join HotelFlow today</p>
+            <h1 className="text-3xl font-bold text-black mb-2">Create Account</h1>
+            <p className="text-black">Join HotelFlow today</p>
           </div>
 
           {error && (
@@ -65,7 +64,7 @@ export default function RegisterPage() {
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
-              <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="name" className="block text-sm font-medium text-black mb-2">
                 Full Name
               </label>
               <input
@@ -75,13 +74,13 @@ export default function RegisterPage() {
                 value={formData.name}
                 onChange={handleChange}
                 required
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="John Doe"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black"
+                placeholder="type your name"
               />
             </div>
 
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="email" className="block text-sm font-medium text-black mb-2">
                 Email Address
               </label>
               <input
@@ -91,13 +90,13 @@ export default function RegisterPage() {
                 value={formData.email}
                 onChange={handleChange}
                 required
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black"
                 placeholder="you@example.com"
               />
             </div>
 
             <div>
-              <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="phone" className="block text-sm font-medium text-black mb-2">
                 Phone Number
               </label>
               <input
@@ -107,13 +106,13 @@ export default function RegisterPage() {
                 value={formData.phone}
                 onChange={handleChange}
                 required
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black"
                 placeholder="+1 (555) 000-0000"
               />
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="password" className="block text-sm font-medium text-black mb-2">
                 Password
               </label>
               <input
@@ -124,13 +123,13 @@ export default function RegisterPage() {
                 onChange={handleChange}
                 required
                 minLength={6}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black"
                 placeholder="••••••••"
               />
             </div>
 
             <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="confirmPassword" className="block text-sm font-medium text-black mb-2">
                 Confirm Password
               </label>
               <input
@@ -141,7 +140,7 @@ export default function RegisterPage() {
                 onChange={handleChange}
                 required
                 minLength={6}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black"
                 placeholder="••••••••"
               />
             </div>
@@ -156,7 +155,7 @@ export default function RegisterPage() {
           </form>
 
           <div className="mt-6 text-center">
-            <p className="text-gray-600">
+            <p className="text-black">
               Already have an account?{" "}
               <Link href="/login" className="text-blue-600 hover:text-blue-700 font-semibold">
                 Login here

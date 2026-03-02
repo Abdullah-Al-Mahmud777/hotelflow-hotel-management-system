@@ -26,7 +26,6 @@ export default function LoginPage() {
     setError("");
 
     try {
-      // TODO: Implement login API call
       console.log("Login data:", formData);
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1000));
@@ -44,8 +43,8 @@ export default function LoginPage() {
       <main className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center px-4 pt-20">
         <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8">
           <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-gray-800 mb-2">Welcome Back</h1>
-            <p className="text-gray-600">Login to your HotelFlow account</p>
+            <h1 className="text-3xl font-bold text-black mb-2">Welcome Back</h1>
+            <p className="text-black">Login to your HotelFlow account</p>
           </div>
 
           {error && (
@@ -56,7 +55,7 @@ export default function LoginPage() {
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="email" className="block text-sm font-medium text-black mb-2">
                 Email Address
               </label>
               <input
@@ -66,13 +65,13 @@ export default function LoginPage() {
                 value={formData.email}
                 onChange={handleChange}
                 required
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black"
                 placeholder="you@example.com"
               />
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="password" className="block text-sm font-medium text-black mb-2">
                 Password
               </label>
               <input
@@ -82,7 +81,7 @@ export default function LoginPage() {
                 value={formData.password}
                 onChange={handleChange}
                 required
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black"
                 placeholder="••••••••"
               />
             </div>
@@ -93,9 +92,9 @@ export default function LoginPage() {
                   type="checkbox"
                   className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                 />
-                <span className="ml-2 text-sm text-gray-600">Remember me</span>
+                <span className="ml-2 text-sm text-black">Remember me</span>
               </label>
-              <Link href="/forgot-password" className="text-sm text-blue-600 hover:text-blue-700">
+              <Link href="/forgot-password" className="text-sm text-blue-600 hover:text-blue-700 font-medium">
                 Forgot password?
               </Link>
             </div>
@@ -110,7 +109,7 @@ export default function LoginPage() {
           </form>
 
           <div className="mt-6 text-center">
-            <p className="text-gray-600">
+            <p className="text-black">
               Don't have an account?{" "}
               <Link href="/register" className="text-blue-600 hover:text-blue-700 font-semibold">
                 Register here
