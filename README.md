@@ -142,7 +142,7 @@ NEXT_PUBLIC_API_URL=http://localhost:5000
 
 ---
 ### feature 
-User Module (The Guest Journey)
+### 1.User Module (The Guest Journey)
 Smart Search: Filter by date, price, and room type (Deluxe/Suite).
 
 Live Booking: Interactive calendar to see available dates instantly.
@@ -155,7 +155,7 @@ Auto-Receipts: Instant PDF invoice generation after payment.
 
 Post-Stay Reviews: Verified rating system for completed stays.
 
-2. Admin Module (The Command Center)
+### 2. Admin Module (The Command Center)
 Analytics Dashboard: Visual charts for daily revenue and occupancy rates.
 
 Room Control (CRUD): Add/edit rooms, set prices, and toggle "Maintenance" mode.
