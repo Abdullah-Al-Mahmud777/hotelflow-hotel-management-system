@@ -63,16 +63,13 @@ NODE_ENV=production
 3. **Root Directory:** `client`
 4. **Framework:** Next.js (auto-detected)
 5. **Environment Variables:**
-```env
-NEXT_PUBLIC_API_URL=https://your-backend.vercel.app
-```
+
+
 6. Deploy → Copy frontend URL
 
 ### Step 4: Update CORS
 Backend project → Settings → Environment Variables:
-```env
-FRONTEND_URL=https://your-frontend.vercel.app
-```
+
 Redeploy backend
 
 ---
