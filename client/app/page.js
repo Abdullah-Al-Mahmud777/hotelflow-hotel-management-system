@@ -25,17 +25,26 @@ export default function Home() {
 
   useEffect(() => {
     setMounted(true);
-    setInitialLoading(true);
-    // Only load rooms on client side
-    if (typeof window !== 'undefined') {
-      loadFeaturedRooms();
-    }
     const handleScroll = () => setIsSticky(window.scrollY > 450);
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  useEffect(() => {
+    // Only load rooms on client side after component is mounted
+    if (mounted && typeof window !== 'undefined') {
+      setInitialLoading(true);
+      loadFeaturedRooms();
+    }
+  }, [mounted]);
+
   const loadFeaturedRooms = async () => {
+    // Only run on client side
+    if (typeof window === 'undefined') {
+      setInitialLoading(false);
+      return;
+    }
+
     try {
       const response = await fetch('http://localhost:5000/api/rooms/featured', {
         method: 'GET',
@@ -437,15 +446,29 @@ export default function Home() {
 }
 
 function RoomCard({ room }) {
+  // Use img tag for local uploads, Next Image for external URLs
+  const isCloudinaryImage = room.image && room.image.includes('cloudinary.com');
+  const isLocalImage = room.image && (room.image.includes('localhost') || room.image.includes('127.0.0.1'));
+  const shouldUseImgTag = isLocalImage;
+  
   return (
     <div className="group bg-white rounded-[2.5rem] shadow-sm hover:shadow-2xl transition-all duration-500 overflow-hidden border border-slate-100">
       <div className="relative h-72 overflow-hidden">
-        <Image 
-          src={room.image || "https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&q=80&w=800"} 
-          alt={room.name}
-          fill
-          className="object-cover group-hover:scale-110 transition-transform duration-700"
-        />
+        {shouldUseImgTag && room.image ? (
+          <img 
+            src={room.image} 
+            alt={room.name}
+            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+          />
+        ) : (
+          <Image 
+            src={room.image || "https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&q=80&w=800"} 
+            alt={room.name}
+            fill
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+            className="object-cover group-hover:scale-110 transition-transform duration-700"
+          />
+        )}
         <div className="absolute top-6 left-6 bg-white/90 backdrop-blur-md px-4 py-1.5 rounded-2xl font-black text-slate-900 text-xs shadow-sm uppercase tracking-wider">
           {room.type}
         </div>

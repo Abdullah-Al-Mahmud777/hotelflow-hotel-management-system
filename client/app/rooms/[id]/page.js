@@ -202,11 +202,21 @@ export default function RoomDetailsPage() {
         <div className="max-w-6xl mx-auto px-4 py-8">
           <div className="bg-white rounded-lg shadow-lg overflow-hidden border border-gray-200">
             <div className="md:flex">
-              <div className="md:w-1/2 bg-gray-200 flex items-center justify-center p-8">
-                <div className="text-center">
-                  <div className="text-6xl mb-4">🏨</div>
-                  <p className="text-gray-600">Room Image</p>
-                </div>
+              <div className="md:w-1/2 bg-gray-200 relative h-96">
+                {room.image ? (
+                  <img 
+                    src={room.image} 
+                    alt={room.name}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="flex items-center justify-center h-full">
+                    <div className="text-center">
+                      <div className="text-6xl mb-4">🏨</div>
+                      <p className="text-gray-600">Room Image</p>
+                    </div>
+                  </div>
+                )}
               </div>
               
               <div className="md:w-1/2 p-8">
