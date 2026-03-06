@@ -52,7 +52,7 @@ app.use('/api/bookings', bookingRoutes);
 app.get("/", (req, res) => {
   res.json({
     success: true,
-    message: "HotelFlow API is running 🚀",
+    message: "HotelFlow API is running ",
     version: "1.0.0",
     database: "MongoDB Atlas Connected",
     endpoints: {
