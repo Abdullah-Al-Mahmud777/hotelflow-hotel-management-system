@@ -26,7 +26,10 @@ export default function Home() {
   useEffect(() => {
     setMounted(true);
     setInitialLoading(true);
-    loadFeaturedRooms();
+    // Only load rooms on client side
+    if (typeof window !== 'undefined') {
+      loadFeaturedRooms();
+    }
     const handleScroll = () => setIsSticky(window.scrollY > 450);
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
@@ -34,11 +37,25 @@ export default function Home() {
 
   const loadFeaturedRooms = async () => {
     try {
-      const response = await api.getFeaturedRooms();
-      setFeaturedRooms(response.data || []);
+      const response = await fetch('http://localhost:5000/api/rooms/featured', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        cache: 'no-store'
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        console.log("Featured rooms loaded:", data.data?.length);
+        setFeaturedRooms(data.data || []);
+      } else {
+        console.error('Failed to fetch rooms');
+        setFeaturedRooms([]);
+      }
     } catch (error) { 
       console.error('Error loading rooms:', error);
-      // Silently fail - just show empty state
+      setFeaturedRooms([]);
     } finally {
       setInitialLoading(false);
     }
@@ -48,12 +65,30 @@ export default function Home() {
     e.preventDefault();
     setLoading(true);
     try {
-      const response = await api.getRooms(filters);
-      setSearchResults(response.data || []);
+      const params = new URLSearchParams();
+      if (filters.type && filters.type !== 'all') params.append('type', filters.type);
+      if (filters.minPrice) params.append('minPrice', filters.minPrice);
+      if (filters.maxPrice) params.append('maxPrice', filters.maxPrice);
+      if (filters.checkIn) params.append('checkIn', filters.checkIn);
+      if (filters.checkOut) params.append('checkOut', filters.checkOut);
+      
+      const response = await fetch(`http://localhost:5000/api/rooms?${params}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        cache: 'no-store'
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setSearchResults(data.data || []);
+      } else {
+        setSearchResults([]);
+      }
       document.getElementById('results')?.scrollIntoView({ behavior: 'smooth' });
     } catch (error) { 
       console.error('Search Error:', error);
-      // Silently fail - just show empty results
       setSearchResults([]);
     } finally { 
       setLoading(false); 
@@ -434,9 +469,12 @@ function RoomCard({ room }) {
               ${room.price}<span className="text-sm font-bold text-slate-400">/nt</span>
             </p>
           </div>
-          <button className="bg-slate-900 text-white px-7 py-4 rounded-2xl font-black hover:bg-blue-600 transition-all active:scale-95 shadow-lg shadow-slate-200">
+          <a 
+            href={`/rooms/${room._id}`}
+            className="bg-slate-900 text-white px-7 py-4 rounded-2xl font-black hover:bg-blue-600 transition-all active:scale-95 shadow-lg shadow-slate-200"
+          >
             BOOK NOW
-          </button>
+          </a>
         </div>
       </div>
     </div>

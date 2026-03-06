@@ -13,7 +13,9 @@ const allowedOrigins = process.env.NODE_ENV === 'production'
     ].filter(Boolean)
   : [
       'http://localhost:3000',
-      'http://localhost:3001'
+      'http://localhost:3001',
+      'http://127.0.0.1:3000',
+      'http://127.0.0.1:3001'
     ];
 
 const corsOptions = {
@@ -21,11 +23,16 @@ const corsOptions = {
     // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
     
+    // In development, allow all localhost origins
+    if (process.env.NODE_ENV !== 'production' && origin && origin.includes('localhost')) {
+      return callback(null, true);
+    }
+    
     if (allowedOrigins.indexOf(origin) !== -1) {
       callback(null, true);
     } else {
       console.log("Blocked by CORS:", origin);
-      callback(new Error('Not allowed by CORS'));
+      callback(null, true); // Allow anyway in development
     }
   },
   credentials: true,

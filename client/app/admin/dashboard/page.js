@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import AdminSidebar from "../components/AdminSidebar";
 import RoomManagement from "../components/RoomManagement";
+import BookingManagement from "../components/BookingManagement";
 
 export default function AdminDashboard() {
   const router = useRouter();
@@ -28,7 +29,7 @@ export default function AdminDashboard() {
       <main className="flex-1 overflow-y-auto">
         <div className="p-8">
           {activeTab === "rooms" && <RoomManagement />}
-          {activeTab === "bookings" && <div className="text-gray-600">Bookings management coming soon...</div>}
+          {activeTab === "bookings" && <BookingManagement />}
           {activeTab === "analytics" && <div className="text-gray-600">Analytics coming soon...</div>}
         </div>
       </main>
