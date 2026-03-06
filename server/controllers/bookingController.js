@@ -21,7 +21,7 @@ exports.createBooking = async (req, res) => {
     
     const existingBooking = await Booking.findOne({
       room,
-      status: { $ne: 'cancelled' },
+      status: { $in: ['pending', 'approved'] }, // Only check pending and approved bookings
       $or: [
         { checkIn: { $lte: checkOutDate }, checkOut: { $gte: checkInDate } }
       ]
@@ -30,7 +30,7 @@ exports.createBooking = async (req, res) => {
     if (existingBooking) {
       return res.status(400).json({
         success: false,
-        message: 'Room is not available for selected dates'
+        message: 'Room is not available for selected dates. Please choose different dates.'
       });
     }
     
@@ -77,6 +77,93 @@ exports.getBookings = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Error fetching bookings',
+      error: error.message
+    });
+  }
+};
+
+// Update booking status (admin)
+exports.updateBookingStatus = async (req, res) => {
+  try {
+    const { status, adminEmail } = req.body;
+    
+    const booking = await Booking.findById(req.params.id);
+    
+    if (!booking) {
+      return res.status(404).json({
+        success: false,
+        message: 'Booking not found'
+      });
+    }
+    
+    booking.status = status;
+    
+    if (status === 'approved') {
+      booking.approvedBy = adminEmail || 'admin';
+      booking.approvedAt = new Date();
+    }
+    
+    await booking.save();
+    await booking.populate('room');
+    
+    res.json({
+      success: true,
+      data: booking
+    });
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      message: 'Error updating booking status',
+      error: error.message
+    });
+  }
+};
+
+// Get single booking
+exports.getBooking = async (req, res) => {
+  try {
+    const booking = await Booking.findById(req.params.id).populate('room');
+    
+    if (!booking) {
+      return res.status(404).json({
+        success: false,
+        message: 'Booking not found'
+      });
+    }
+    
+    res.json({
+      success: true,
+      data: booking
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching booking',
+      error: error.message
+    });
+  }
+};
+
+// Delete booking (admin)
+exports.deleteBooking = async (req, res) => {
+  try {
+    const booking = await Booking.findByIdAndDelete(req.params.id);
+    
+    if (!booking) {
+      return res.status(404).json({
+        success: false,
+        message: 'Booking not found'
+      });
+    }
+    
+    res.json({
+      success: true,
+      message: 'Booking deleted successfully'
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error deleting booking',
       error: error.message
     });
   }

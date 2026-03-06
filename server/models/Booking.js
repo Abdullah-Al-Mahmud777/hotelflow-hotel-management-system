@@ -30,10 +30,26 @@ const bookingSchema = new mongoose.Schema({
     type: Number,
     required: true
   },
+  numberOfGuests: {
+    type: Number,
+    default: 1
+  },
+  specialRequests: {
+    type: String,
+    default: ''
+  },
   status: {
     type: String,
-    enum: ['pending', 'confirmed', 'cancelled'],
+    enum: ['pending', 'approved', 'rejected', 'cancelled'],
     default: 'pending'
+  },
+  approvedBy: {
+    type: String,
+    default: null
+  },
+  approvedAt: {
+    type: Date,
+    default: null
   }
 }, {
   timestamps: true
