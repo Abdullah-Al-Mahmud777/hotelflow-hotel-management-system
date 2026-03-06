@@ -136,12 +136,21 @@ export default function RoomsPage() {
             {filteredRooms.map((room) => (
               <div key={room._id} className="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200 hover:shadow-2xl transition-all duration-300">
                 <div className="relative h-64 bg-gray-200">
-                  <Image
-                    src={room.image || "https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&q=80&w=800"}
-                    alt={room.name}
-                    fill
-                    className="object-cover"
-                  />
+                  {room.image && (room.image.includes('localhost') || room.image.includes('127.0.0.1')) ? (
+                    <img
+                      src={room.image}
+                      alt={room.name}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <Image
+                      src={room.image || "https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&q=80&w=800"}
+                      alt={room.name}
+                      fill
+                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                      className="object-cover"
+                    />
+                  )}
                   <div className="absolute top-4 right-4 bg-blue-600 text-white px-3 py-1 rounded-full text-sm font-bold">
                     {room.type}
                   </div>
