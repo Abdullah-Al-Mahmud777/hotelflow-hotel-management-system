@@ -18,8 +18,6 @@ export default function RoomManagement() {
     image: ""
   });
   const [imagePreview, setImagePreview] = useState("");
-  const [imageFile, setImageFile] = useState(null);
-  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     fetchRooms();
@@ -53,90 +51,17 @@ export default function RoomManagement() {
       image: value
     });
     setImagePreview(value);
-    // Clear file when URL is entered
-    setImageFile(null);
-  };
-
-  const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      console.log('File selected:', file.name, file.size, file.type);
-      setImageFile(file);
-      // Clear URL input when file is selected
-      setFormData({
-        ...formData,
-        image: ""
-      });
-      // Create preview
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreview(reader.result);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const uploadImage = async () => {
-    if (!imageFile) return null;
-
-    setUploading(true);
-    try {
-      const formData = new FormData();
-      formData.append('image', imageFile);
-
-      console.log('Uploading image to Cloudinary:', imageFile.name);
-
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
-      const response = await fetch(`${API_URL}/api/upload/image`, {
-        method: 'POST',
-        body: formData
-      });
-
-      console.log('Upload response status:', response.status);
-
-      if (response.ok) {
-        const data = await response.json();
-        console.log('Upload successful (Cloudinary):', data);
-        return data.imageUrl;
-      } else {
-        const error = await response.text();
-        console.error('Upload failed:', error);
-      }
-      return null;
-    } catch (error) {
-      console.error('Error uploading image:', error);
-      return null;
-    } finally {
-      setUploading(false);
-    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      // Upload image if file is selected
-      let imageUrl = formData.image;
-      
-      console.log('Form submitted. Image file:', imageFile);
-      console.log('Current image URL:', formData.image);
-      
-      if (imageFile) {
-        console.log('Uploading image file...');
-        const uploadedUrl = await uploadImage();
-        console.log('Uploaded URL:', uploadedUrl);
-        if (uploadedUrl) {
-          imageUrl = uploadedUrl;
-        }
-      }
-
-      console.log('Final image URL:', imageUrl);
-
       const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
       const url = editingRoom 
         ? `${API_URL}/api/rooms/${editingRoom._id}`
         : `${API_URL}/api/rooms`;
       
-      const roomData = { ...formData, image: imageUrl };
+      const roomData = { ...formData };
       console.log('Saving room with data:', roomData);
       
       const response = await fetch(url, {
@@ -202,7 +127,6 @@ export default function RoomManagement() {
       image: ""
     });
     setImagePreview("");
-    setImageFile(null);
     setEditingRoom(null);
   };
 
@@ -350,43 +274,19 @@ export default function RoomManagement() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Room Image</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Room Image URL</label>
                 
-                {/* File Upload */}
-                <div className="mb-3">
-                  <label className="block w-full px-4 py-3 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-blue-500 transition">
-                    <div className="flex items-center justify-center space-x-2">
-                      <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                      </svg>
-                      <span className="text-gray-600">Click to upload image</span>
-                    </div>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleFileChange}
-                      className="hidden"
-                    />
-                  </label>
-                  <p className="text-xs text-gray-500 mt-1">PNG, JPG, GIF up to 5MB</p>
-                </div>
-
-                {/* OR Divider */}
-                <div className="flex items-center my-3">
-                  <div className="flex-1 border-t border-gray-300"></div>
-                  <span className="px-3 text-gray-500 text-sm">OR</span>
-                  <div className="flex-1 border-t border-gray-300"></div>
-                </div>
-
-                {/* URL Input */}
                 <input
                   type="url"
                   name="image"
                   value={formData.image}
                   onChange={handleImageChange}
-                  placeholder="Enter image URL"
+                  placeholder="https://images.unsplash.com/photo-..."
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-900"
                 />
+                <p className="text-xs text-gray-500 mt-1">
+                  Paste image URL from Unsplash, Imgur, or any image hosting service
+                </p>
                 
                 {imagePreview && (
                   <div className="mt-3">
@@ -397,14 +297,27 @@ export default function RoomManagement() {
                       className="w-full h-48 object-cover rounded-lg border border-gray-300"
                       onError={(e) => {
                         e.target.style.display = 'none';
-                        e.target.nextSibling.style.display = 'block';
+                        e.target.nextElementSibling.style.display = 'flex';
+                      }}
+                      onLoad={(e) => {
+                        e.target.style.display = 'block';
+                        e.target.nextElementSibling.style.display = 'none';
                       }}
                     />
                     <div className="hidden w-full h-48 bg-gray-100 rounded-lg border border-gray-300 flex items-center justify-center text-gray-500">
-                      Invalid image
+                      Invalid image URL
                     </div>
                   </div>
                 )}
+                
+                <div className="mt-2 p-3 bg-blue-50 rounded-lg">
+                  <p className="text-xs font-medium text-blue-900 mb-1">💡 Where to get free images:</p>
+                  <ul className="text-xs text-blue-800 space-y-1">
+                    <li>• <a href="https://unsplash.com" target="_blank" className="underline">Unsplash.com</a> - Free high-quality images</li>
+                    <li>• <a href="https://imgur.com" target="_blank" className="underline">Imgur.com</a> - Free image hosting</li>
+                    <li>• Right-click image → Copy image address</li>
+                  </ul>
+                </div>
               </div>
 
               <div className="flex items-center">
@@ -421,10 +334,9 @@ export default function RoomManagement() {
               <div className="flex space-x-4 pt-4">
                 <button
                   type="submit"
-                  disabled={uploading}
-                  className="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition disabled:bg-gray-400"
+                  className="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition"
                 >
-                  {uploading ? "Uploading..." : editingRoom ? "Update Room" : "Add Room"}
+                  {editingRoom ? "Update Room" : "Add Room"}
                 </button>
                 <button
                   type="button"
