@@ -1,0 +1,278 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { api } from "../../../lib/api";
+
+export default function RoomManagement() {
+  const [rooms, setRooms] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [showModal, setShowModal] = useState(false);
+  const [editingRoom, setEditingRoom] = useState(null);
+  const [formData, setFormData] = useState({
+    name: "",
+    type: "Standard",
+    price: "",
+    description: "",
+    capacity: "",
+    featured: false
+  });
+
+  useEffect(() => {
+    fetchRooms();
+  }, []);
+
+  const fetchRooms = async () => {
+    try {
+      setLoading(true);
+      const response = await api.getRooms();
+      setRooms(response.data || []);
+    } catch (error) {
+      console.error("Error fetching rooms:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleInputChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setFormData({
+      ...formData,
+      [name]: type === "checkbox" ? checked : value
+    });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+      const url = editingRoom 
+        ? `${API_URL}/api/rooms/${editingRoom._id}`
+        : `${API_URL}/api/rooms`;
+      
+      const response = await fetch(url, {
+        method: editingRoom ? "PUT" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData)
+      });
+
+      if (response.ok) {
+        fetchRooms();
+        setShowModal(false);
+        resetForm();
+      }
+    } catch (error) {
+      console.error("Error saving room:", error);
+    }
+  };
+
+  const handleEdit = (room) => {
+    setEditingRoom(room);
+    setFormData({
+      name: room.name,
+      type: room.type,
+      price: room.price,
+      description: room.description,
+      capacity: room.capacity,
+      featured: room.featured
+    });
+    setShowModal(true);
+  };
+
+  const handleDelete = async (roomId) => {
+    if (!confirm("Are you sure you want to delete this room?")) return;
+    
+    try {
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+      const response = await fetch(`${API_URL}/api/rooms/${roomId}`, {
+        method: "DELETE"
+      });
+
+      if (response.ok) {
+        fetchRooms();
+      }
+    } catch (error) {
+      console.error("Error deleting room:", error);
+    }
+  };
+
+  const resetForm = () => {
+    setFormData({
+      name: "",
+      type: "Standard",
+      price: "",
+      description: "",
+      capacity: "",
+      featured: false
+    });
+    setEditingRoom(null);
+  };
+
+  const openAddModal = () => {
+    resetForm();
+    setShowModal(true);
+  };
+
+  if (loading) {
+    return <div className="text-center py-8">Loading rooms...</div>;
+  }
+
+  return (
+    <div>
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-3xl font-bold text-gray-900">Room Management</h2>
+        <button
+          onClick={openAddModal}
+          className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition font-semibold flex items-center space-x-2"
+        >
+          <span>➕</span>
+          <span>Add New Room</span>
+        </button>
+      </div>
+
+      <div className="bg-white rounded-lg shadow overflow-hidden">
+        <table className="min-w-full divide-y divide-gray-200">
+          <thead className="bg-gray-50">
+            <tr>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Price</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Capacity</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Featured</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+            </tr>
+          </thead>
+          <tbody className="bg-white divide-y divide-gray-200">
+            {rooms.map((room) => (
+              <tr key={room._id}>
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{room.name}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{room.type}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${room.price}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{room.capacity}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  {room.featured ? "✅" : "❌"}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm space-x-2">
+                  <button
+                    onClick={() => handleEdit(room)}
+                    className="text-blue-600 hover:text-blue-800"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => handleDelete(room._id)}
+                    className="text-red-600 hover:text-red-800"
+                  >
+                    Delete
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {showModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <h3 className="text-2xl font-bold mb-6 text-gray-900">
+              {editingRoom ? "Edit Room" : "Add New Room"}
+            </h3>
+            
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Room Name</label>
+                <input
+                  type="text"
+                  name="name"
+                  value={formData.name}
+                  onChange={handleInputChange}
+                  required
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-900"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Type</label>
+                <select
+                  name="type"
+                  value={formData.type}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-900"
+                >
+                  <option value="Standard">Standard</option>
+                  <option value="Deluxe">Deluxe</option>
+                  <option value="Suite">Suite</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Price ($)</label>
+                <input
+                  type="number"
+                  name="price"
+                  value={formData.price}
+                  onChange={handleInputChange}
+                  required
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-900"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Capacity</label>
+                <input
+                  type="number"
+                  name="capacity"
+                  value={formData.capacity}
+                  onChange={handleInputChange}
+                  required
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-900"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                <textarea
+                  name="description"
+                  value={formData.description}
+                  onChange={handleInputChange}
+                  rows="3"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-900"
+                />
+              </div>
+
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  name="featured"
+                  checked={formData.featured}
+                  onChange={handleInputChange}
+                  className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                />
+                <label className="ml-2 text-sm text-gray-700">Featured Room</label>
+              </div>
+
+              <div className="flex space-x-4 pt-4">
+                <button
+                  type="submit"
+                  className="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition"
+                >
+                  {editingRoom ? "Update Room" : "Add Room"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowModal(false);
+                    resetForm();
+                  }}
+                  className="flex-1 bg-gray-300 text-gray-700 py-2 rounded-lg hover:bg-gray-400 transition"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
