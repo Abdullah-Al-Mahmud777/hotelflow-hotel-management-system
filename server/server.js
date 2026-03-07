@@ -10,7 +10,8 @@ const app = express();
 const allowedOrigins = process.env.NODE_ENV === 'production' 
   ? [
       process.env.FRONTEND_URL,
-      'https://hotelflow-hotel-management-system-d.vercel.app' // Your frontend URL
+      'https://hotelflow-hotel-management-system-d.vercel.app',
+      'https://hotelflow-hotel-management-system.vercel.app'
     ].filter(Boolean)
   : [
       'http://localhost:3000',
@@ -29,14 +30,21 @@ const corsOptions = {
       return callback(null, true);
     }
     
+    // Allow all Vercel preview URLs
+    if (origin && origin.includes('.vercel.app')) {
+      return callback(null, true);
+    }
+    
     if (allowedOrigins.indexOf(origin) !== -1) {
       callback(null, true);
     } else {
       console.log("Blocked by CORS:", origin);
-      callback(null, true); // Allow anyway in development
+      callback(null, false);
     }
   },
   credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
   optionsSuccessStatus: 200
 };
 

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { api } from "../../../lib/api";
+import { getApiUrl } from "../../../lib/apiUrl";
 
 export default function BookingManagement() {
   const [bookings, setBookings] = useState([]);
@@ -27,9 +28,8 @@ export default function BookingManagement() {
   const handleStatusUpdate = async (bookingId, newStatus) => {
     try {
       const adminEmail = localStorage.getItem("adminEmail");
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
       
-      const response = await fetch(`${API_URL}/api/bookings/${bookingId}/status`, {
+      const response = await fetch(getApiUrl(`/api/bookings/${bookingId}/status`), {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: newStatus, adminEmail })
@@ -47,8 +47,7 @@ export default function BookingManagement() {
     if (!confirm("Are you sure you want to delete this booking?")) return;
     
     try {
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
-      const response = await fetch(`${API_URL}/api/bookings/${bookingId}`, {
+      const response = await fetch(getApiUrl(`/api/bookings/${bookingId}`), {
         method: "DELETE"
       });
 

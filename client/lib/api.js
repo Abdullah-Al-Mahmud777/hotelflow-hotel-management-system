@@ -1,5 +1,14 @@
 const API_URL = 'http://localhost:5000';
 
+// Helper to build API URLs without double slashes
+const buildUrl = (path) => {
+  const baseUrl = (typeof window !== 'undefined' && process.env.NEXT_PUBLIC_API_URL) 
+    ? process.env.NEXT_PUBLIC_API_URL.replace(/\/$/, '') // Remove trailing slash
+    : API_URL;
+  const cleanPath = path.startsWith('/') ? path : `/${path}`;
+  return `${baseUrl}${cleanPath}`;
+};
+
 export const api = {
   // Rooms
   async getRooms(filters = {}) {
@@ -10,7 +19,7 @@ export const api = {
     if (filters.checkIn) params.append('checkIn', filters.checkIn);
     if (filters.checkOut) params.append('checkOut', filters.checkOut);
     
-    const url = `${API_URL}/api/rooms?${params}`;
+    const url = `${buildUrl('/api/rooms')}?${params}`;
     
     const res = await fetch(url, {
       method: 'GET',
@@ -28,7 +37,7 @@ export const api = {
   },
 
   async getFeaturedRooms() {
-    const url = `${API_URL}/api/rooms/featured`;
+    const url = buildUrl('/api/rooms/featured');
     
     const res = await fetch(url, {
       method: 'GET',
@@ -46,7 +55,7 @@ export const api = {
   },
 
   async getRoom(id) {
-    const url = `${API_URL}/api/rooms/${id}`;
+    const url = buildUrl(`/api/rooms/${id}`);
     const res = await fetch(url, {
       method: 'GET',
       headers: {
@@ -60,7 +69,7 @@ export const api = {
 
   // Bookings
   async createBooking(bookingData) {
-    const res = await fetch(`${API_URL}/api/bookings`, {
+    const res = await fetch(buildUrl('/api/bookings'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(bookingData)
@@ -75,7 +84,7 @@ export const api = {
   },
 
   async getBookings() {
-    const res = await fetch(`${API_URL}/api/bookings`, {
+    const res = await fetch(buildUrl('/api/bookings'), {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',

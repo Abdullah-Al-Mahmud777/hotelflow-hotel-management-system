@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { api } from "../../../lib/api";
+import { getApiUrl } from "../../../lib/apiUrl";
 
 export default function RoomManagement() {
   const [rooms, setRooms] = useState([]);
@@ -56,10 +57,9 @@ export default function RoomManagement() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
       const url = editingRoom 
-        ? `${API_URL}/api/rooms/${editingRoom._id}`
-        : `${API_URL}/api/rooms`;
+        ? getApiUrl(`/api/rooms/${editingRoom._id}`)
+        : getApiUrl('/api/rooms');
       
       const roomData = { ...formData };
       console.log('Saving room with data:', roomData);
@@ -103,8 +103,7 @@ export default function RoomManagement() {
     if (!confirm("Are you sure you want to delete this room?")) return;
     
     try {
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
-      const response = await fetch(`${API_URL}/api/rooms/${roomId}`, {
+      const response = await fetch(getApiUrl(`/api/rooms/${roomId}`), {
         method: "DELETE"
       });
 

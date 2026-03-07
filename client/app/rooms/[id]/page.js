@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Navbar from "../../components/Navbar";
 import { LoadingSpinner } from "../../components/Loading";
+import { getApiUrl } from "../../../lib/apiUrl";
 
 export default function RoomDetailsPage() {
   const params = useParams();
@@ -34,12 +35,11 @@ export default function RoomDetailsPage() {
   const fetchRoom = async () => {
     try {
       setLoading(true);
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
       
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 5000);
       
-      const response = await fetch(`${API_URL}/api/rooms/${params.id}`, {
+      const response = await fetch(getApiUrl(`/api/rooms/${params.id}`), {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
