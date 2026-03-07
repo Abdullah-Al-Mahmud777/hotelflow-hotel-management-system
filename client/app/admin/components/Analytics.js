@@ -14,7 +14,9 @@ export default function Analytics() {
     totalRooms: 0,
     totalReviews: 0,
     avgRating: 0,
-    totalRevenue: 0
+    totalRevenue: 0,
+    totalContacts: 0,
+    newContacts: 0
   });
   const [recentActivity, setRecentActivity] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -53,7 +55,7 @@ export default function Analytics() {
       <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-6">Analytics Dashboard</h2>
       
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 mb-8">
         <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg shadow-lg p-6 text-white">
           <div className="flex items-center justify-between">
             <div>
@@ -95,6 +97,17 @@ export default function Analytics() {
               <p className="text-yellow-100 text-xs mt-1">Avg: {stats.avgRating}⭐</p>
             </div>
             <div className="text-5xl opacity-20">⭐</div>
+          </div>
+        </div>
+
+        <div className="bg-gradient-to-br from-pink-500 to-pink-600 rounded-lg shadow-lg p-6 text-white">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-pink-100 text-sm font-medium">Contact Messages</p>
+              <p className="text-3xl font-bold mt-2">{stats.totalContacts}</p>
+              <p className="text-pink-100 text-xs mt-1">{stats.newContacts} new</p>
+            </div>
+            <div className="text-5xl opacity-20">📧</div>
           </div>
         </div>
       </div>

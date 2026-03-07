@@ -97,6 +97,32 @@ exports.getRoomReviews = async (req, res) => {
   }
 };
 
+// Get All Approved Reviews (for homepage)
+exports.getAllApprovedReviews = async (req, res) => {
+  try {
+    const reviews = await Review.find({ 
+      status: 'approved'
+    })
+      .populate('user', 'name avatar')
+      .populate('room', 'name type')
+      .sort('-createdAt')
+      .limit(10); // Limit to 10 most recent reviews
+
+    res.status(200).json({
+      success: true,
+      count: reviews.length,
+      data: reviews
+    });
+  } catch (error) {
+    console.error('Get approved reviews error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to get reviews',
+      error: error.message
+    });
+  }
+};
+
 // Get User's Reviews (all statuses)
 exports.getUserReviews = async (req, res) => {
   try {

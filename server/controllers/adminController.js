@@ -2,6 +2,7 @@ const User = require('../models/User');
 const Booking = require('../models/Booking');
 const Room = require('../models/Room');
 const Review = require('../models/Review');
+const Contact = require('../models/Contact');
 
 // Get All Users
 exports.getAllUsers = async (req, res) => {
@@ -176,6 +177,8 @@ exports.getAnalytics = async (req, res) => {
     const totalReviews = await Review.countDocuments();
     const pendingReviews = await Review.countDocuments({ status: 'pending' });
     const approvedReviews = await Review.countDocuments({ status: 'approved' });
+    const totalContacts = await Contact.countDocuments();
+    const newContacts = await Contact.countDocuments({ status: 'new' });
 
     // Calculate average rating (only approved reviews)
     const reviews = await Review.find({ status: 'approved' });
@@ -228,7 +231,9 @@ exports.getAnalytics = async (req, res) => {
         pendingReviews,
         approvedReviews,
         avgRating,
-        totalRevenue
+        totalRevenue,
+        totalContacts,
+        newContacts
       },
       recentActivity
     });
@@ -263,3 +268,100 @@ function getTimeAgo(date) {
   
   return Math.floor(seconds) + ' seconds ago';
 }
+
+// Get All Contacts (Admin Only)
+exports.getAllContacts = async (req, res) => {
+  try {
+    const { status } = req.query;
+    
+    const filter = {};
+    if (status && status !== 'all') {
+      filter.status = status;
+    }
+
+    const contacts = await Contact.find(filter)
+      .populate('user', 'name email')
+      .sort('-createdAt');
+
+    res.status(200).json({
+      success: true,
+      count: contacts.length,
+      data: contacts
+    });
+  } catch (error) {
+    console.error('Get contacts error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to get contacts',
+      error: error.message
+    });
+  }
+};
+
+// Update Contact Status (Admin Only)
+exports.updateContactStatus = async (req, res) => {
+  try {
+    const { status } = req.body;
+
+    if (!['new', 'read', 'replied'].includes(status)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid status'
+      });
+    }
+
+    const contact = await Contact.findByIdAndUpdate(
+      req.params.id,
+      { status },
+      { new: true, runValidators: true }
+    ).populate('user', 'name email');
+
+    if (!contact) {
+      return res.status(404).json({
+        success: false,
+        message: 'Contact not found'
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Contact status updated',
+      data: contact
+    });
+  } catch (error) {
+    console.error('Update contact status error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to update contact status',
+      error: error.message
+    });
+  }
+};
+
+// Delete Contact (Admin Only)
+exports.deleteContact = async (req, res) => {
+  try {
+    const contact = await Contact.findById(req.params.id);
+
+    if (!contact) {
+      return res.status(404).json({
+        success: false,
+        message: 'Contact not found'
+      });
+    }
+
+    await contact.deleteOne();
+
+    res.status(200).json({
+      success: true,
+      message: 'Contact deleted successfully'
+    });
+  } catch (error) {
+    console.error('Delete contact error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to delete contact',
+      error: error.message
+    });
+  }
+};

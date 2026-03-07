@@ -16,6 +16,11 @@ router.delete('/users/:id', adminController.deleteUser);
 router.get('/reviews', adminController.getAllReviews);
 router.put('/reviews/:id/status', adminController.updateReviewStatus);
 
+// Contact management
+router.get('/contacts', adminController.getAllContacts);
+router.put('/contacts/:id/status', adminController.updateContactStatus);
+router.delete('/contacts/:id', adminController.deleteContact);
+
 // Analytics
 router.get('/analytics', adminController.getAnalytics);
 

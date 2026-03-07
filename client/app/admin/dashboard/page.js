@@ -7,6 +7,7 @@ import RoomManagement from "../components/RoomManagement";
 import BookingManagement from "../components/BookingManagement";
 import UserManagement from "../components/UserManagement";
 import ReviewManagement from "../components/ReviewManagement";
+import ContactManagement from "../components/ContactManagement";
 import Analytics from "../components/Analytics";
 
 export default function AdminDashboard() {
@@ -67,6 +68,7 @@ export default function AdminDashboard() {
           {activeTab === "bookings" && <BookingManagement />}
           {activeTab === "users" && <UserManagement />}
           {activeTab === "reviews" && <ReviewManagement />}
+          {activeTab === "contacts" && <ContactManagement />}
         </div>
       </main>
     </div>

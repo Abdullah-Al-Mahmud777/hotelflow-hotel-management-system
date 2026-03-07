@@ -21,7 +21,8 @@ export default function AdminSidebar({ activeTab, setActiveTab, adminEmail, onCl
     { id: "rooms", label: "Room Management", icon: "🏨" },
     { id: "bookings", label: "Bookings", icon: "📅" },
     { id: "users", label: "User Management", icon: "👥" },
-    { id: "reviews", label: "Reviews", icon: "⭐" }
+    { id: "reviews", label: "Reviews", icon: "⭐" },
+    { id: "contacts", label: "Contact Messages", icon: "📧" }
   ];
 
   return (

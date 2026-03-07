@@ -6,10 +6,12 @@ import { api } from "@/lib/api";
 import Navbar from "./components/Navbar";
 import { LoadingSpinner, LoadingCard } from "./components/Loading";
 import Carousel, { TestimonialsCarousel } from "./components/Carousel";
+import { getApiUrl } from "../lib/apiUrl";
 
 export default function Home() {
   const [featuredRooms, setFeaturedRooms] = useState([]);
   const [searchResults, setSearchResults] = useState([]);
+  const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(false);
   const [isSticky, setIsSticky] = useState(false);
@@ -35,6 +37,7 @@ export default function Home() {
     if (mounted && typeof window !== 'undefined') {
       setInitialLoading(true);
       loadFeaturedRooms();
+      loadApprovedReviews();
     }
   }, [mounted]);
 
@@ -46,7 +49,7 @@ export default function Home() {
     }
 
     try {
-      const response = await fetch('http://localhost:5000/api/rooms/featured', {
+      const response = await fetch(getApiUrl('/api/rooms/featured'), {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -70,6 +73,27 @@ export default function Home() {
     }
   };
 
+  const loadApprovedReviews = async () => {
+    try {
+      const response = await fetch(getApiUrl('/api/reviews/approved'), {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        cache: 'no-store'
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        console.log("Approved reviews loaded:", data.data?.length);
+        setReviews(data.data || []);
+      }
+    } catch (error) { 
+      console.error('Error loading reviews:', error);
+      setReviews([]);
+    }
+  };
+
   const handleSearch = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -81,7 +105,7 @@ export default function Home() {
       if (filters.checkIn) params.append('checkIn', filters.checkIn);
       if (filters.checkOut) params.append('checkOut', filters.checkOut);
       
-      const response = await fetch(`http://localhost:5000/api/rooms?${params}`, {
+      const response = await fetch(getApiUrl(`/api/rooms?${params}`), {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -427,7 +451,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* CAROUSEL 3: Testimonials */}
+      {/* CAROUSEL 3: Guest Reviews */}
       <section className="bg-gradient-to-br from-blue-50 to-indigo-50 py-20" suppressHydrationWarning>
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
@@ -436,9 +460,57 @@ export default function Home() {
             </h2>
             <p className="text-slate-600 font-medium">What our guests say about their experience</p>
           </div>
-          <div className="max-w-3xl mx-auto h-[280px] relative">
-            {mounted && <TestimonialsCarousel />}
-          </div>
+          
+          {reviews.length > 0 ? (
+            <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {reviews.slice(0, 6).map((review) => (
+                <div key={review._id} className="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-shadow">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
+                      {review.user?.avatar ? (
+                        <img 
+                          src={review.user.avatar} 
+                          alt={review.user.name}
+                          className="w-full h-full rounded-full object-cover"
+                        />
+                      ) : (
+                        <span className="text-blue-600 text-xl font-bold">
+                          {review.user?.name?.charAt(0).toUpperCase() || '?'}
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      <h4 className="font-bold text-gray-900">{review.user?.name || 'Guest'}</h4>
+                      <p className="text-sm text-gray-500">{review.room?.name}</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center gap-1 mb-3">
+                    {[...Array(5)].map((_, i) => (
+                      <span key={i} className={`text-lg ${i < review.rating ? 'text-yellow-400' : 'text-gray-300'}`}>
+                        ⭐
+                      </span>
+                    ))}
+                  </div>
+                  
+                  <p className="text-gray-700 text-sm leading-relaxed line-clamp-4">
+                    {review.comment}
+                  </p>
+                  
+                  <p className="text-xs text-gray-400 mt-3">
+                    {new Date(review.createdAt).toLocaleDateString()}
+                  </p>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="max-w-3xl mx-auto h-[280px] relative flex items-center justify-center">
+              <div className="text-center">
+                <div className="text-6xl mb-4">⭐</div>
+                <p className="text-gray-600 font-medium">No reviews yet. Be the first to share your experience!</p>
+              </div>
+            </div>
+          )}
         </div>
       </section>
     </main>
