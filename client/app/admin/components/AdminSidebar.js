@@ -2,13 +2,18 @@
 
 import { useRouter } from "next/navigation";
 
-export default function AdminSidebar({ activeTab, setActiveTab, adminEmail }) {
+export default function AdminSidebar({ activeTab, setActiveTab, adminEmail, onClose }) {
   const router = useRouter();
 
   const handleLogout = () => {
     localStorage.removeItem("adminToken");
     localStorage.removeItem("adminEmail");
     router.push("/admin/login");
+  };
+
+  const handleMenuClick = (tabId) => {
+    setActiveTab(tabId);
+    if (onClose) onClose();
   };
 
   const menuItems = [
@@ -18,7 +23,7 @@ export default function AdminSidebar({ activeTab, setActiveTab, adminEmail }) {
   ];
 
   return (
-    <aside className="w-64 bg-gray-900 text-white flex flex-col">
+    <aside className="w-64 bg-gray-900 text-white flex flex-col h-full">
       <div className="p-6 border-b border-gray-800">
         <h1 className="text-2xl font-bold text-blue-400">HotelFlow</h1>
         <p className="text-sm text-gray-400 mt-1">Admin Panel</p>
@@ -41,7 +46,7 @@ export default function AdminSidebar({ activeTab, setActiveTab, adminEmail }) {
           {menuItems.map((item) => (
             <li key={item.id}>
               <button
-                onClick={() => setActiveTab(item.id)}
+                onClick={() => handleMenuClick(item.id)}
                 className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition ${
                   activeTab === item.id
                     ? "bg-blue-600 text-white"
