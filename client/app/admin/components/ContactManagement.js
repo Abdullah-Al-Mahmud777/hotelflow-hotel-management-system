@@ -17,7 +17,7 @@ export default function ContactManagement() {
   const fetchContacts = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('adminToken');
       
       const url = filter === 'all' 
         ? getApiUrl('/api/admin/contacts')
@@ -33,6 +33,8 @@ export default function ContactManagement() {
       if (response.ok) {
         const data = await response.json();
         setContacts(data.data || []);
+      } else {
+        console.error("Failed to fetch contacts:", response.status);
       }
     } catch (error) {
       console.error("Error fetching contacts:", error);
@@ -43,7 +45,7 @@ export default function ContactManagement() {
 
   const updateContactStatus = async (contactId, status) => {
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('adminToken');
       
       const response = await fetch(getApiUrl(`/api/admin/contacts/${contactId}/status`), {
         method: 'PUT',
@@ -71,7 +73,7 @@ export default function ContactManagement() {
     }
 
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('adminToken');
       
       const response = await fetch(getApiUrl(`/api/admin/contacts/${contactId}`), {
         method: 'DELETE',
