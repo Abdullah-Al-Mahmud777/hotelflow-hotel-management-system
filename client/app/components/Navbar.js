@@ -1,10 +1,28 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 export default function Navbar() {
+  const router = useRouter();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    // Check if user is logged in
+    const userData = localStorage.getItem('user');
+    if (userData) {
+      setUser(JSON.parse(userData));
+    }
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    setUser(null);
+    router.push('/');
+  };
 
   return (
     <nav className="bg-white shadow-sm fixed top-0 left-0 right-0 z-50 border-b border-gray-100">
@@ -32,20 +50,40 @@ export default function Navbar() {
             </Link>
           </div>
 
-          {/* Auth Buttons */}
+          {/* Auth Buttons / User Menu */}
           <div className="hidden md:flex items-center space-x-4">
-            <Link 
-              href="/login"
-              className="text-gray-700 hover:text-blue-600 font-medium transition px-4 py-2"
-            >
-              Login
-            </Link>
-            <Link 
-              href="/register"
-              className="bg-blue-600 text-white px-6 py-2.5 rounded-lg hover:bg-blue-700 transition font-medium shadow-sm"
-            >
-              Register
-            </Link>
+            {user ? (
+              <>
+                <Link 
+                  href="/user/dashboard"
+                  className="text-gray-700 hover:text-blue-600 font-medium transition px-4 py-2 flex items-center gap-2"
+                >
+                  <span>👤</span>
+                  <span>{user.name}</span>
+                </Link>
+                <button
+                  onClick={handleLogout}
+                  className="text-gray-700 hover:text-red-600 font-medium transition px-4 py-2"
+                >
+                  Logout
+                </button>
+              </>
+            ) : (
+              <>
+                <Link 
+                  href="/login"
+                  className="text-gray-700 hover:text-blue-600 font-medium transition px-4 py-2"
+                >
+                  Login
+                </Link>
+                <Link 
+                  href="/register"
+                  className="bg-blue-600 text-white px-6 py-2.5 rounded-lg hover:bg-blue-700 transition font-medium shadow-sm"
+                >
+                  Register
+                </Link>
+              </>
+            )}
           </div>
 
           {/* Mobile Menu Button */}
@@ -111,20 +149,43 @@ export default function Navbar() {
                 Contact
               </Link>
               <div className="pt-4 border-t border-gray-100 flex flex-col space-y-3">
-                <Link 
-                  href="/login"
-                  className="text-gray-700 hover:text-blue-600 font-medium transition text-center py-2"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  Login
-                </Link>
-                <Link 
-                  href="/register"
-                  className="bg-blue-600 text-white px-6 py-2.5 rounded-lg hover:bg-blue-700 transition font-medium text-center shadow-sm"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  Register
-                </Link>
+                {user ? (
+                  <>
+                    <Link 
+                      href="/user/dashboard"
+                      className="text-gray-700 hover:text-blue-600 font-medium transition text-center py-2"
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      👤 {user.name}
+                    </Link>
+                    <button
+                      onClick={() => {
+                        handleLogout();
+                        setIsMenuOpen(false);
+                      }}
+                      className="text-gray-700 hover:text-red-600 font-medium transition text-center py-2"
+                    >
+                      Logout
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <Link 
+                      href="/login"
+                      className="text-gray-700 hover:text-blue-600 font-medium transition text-center py-2"
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      Login
+                    </Link>
+                    <Link 
+                      href="/register"
+                      className="bg-blue-600 text-white px-6 py-2.5 rounded-lg hover:bg-blue-700 transition font-medium text-center shadow-sm"
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      Register
+                    </Link>
+                  </>
+                )}
               </div>
             </div>
           </div>

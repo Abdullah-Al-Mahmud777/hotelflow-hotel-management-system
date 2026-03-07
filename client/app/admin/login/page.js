@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { LoadingSpinner } from "../../components/Loading";
+import { getApiUrl } from "../../../lib/apiUrl";
 
 export default function AdminLoginPage() {
   const router = useRouter();
@@ -26,16 +27,34 @@ export default function AdminLoginPage() {
     setError("");
 
     try {
-      // Simple admin check (replace with real authentication later)
-      if (formData.email === "admin@hotelflow.com" && formData.password === "admin123") {
-        localStorage.setItem("adminToken", "admin-token-123");
-        localStorage.setItem("adminEmail", formData.email);
-        router.push("/admin/dashboard");
+      const response = await fetch(getApiUrl('/api/auth/login'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        // Check if user is admin
+        if (data.user.role !== 'admin') {
+          setError('Access denied. Admin credentials required.');
+          return;
+        }
+
+        // Store admin token and data
+        localStorage.setItem('adminToken', data.token);
+        localStorage.setItem('adminEmail', data.user.email);
+        localStorage.setItem('adminUser', JSON.stringify(data.user));
+        
+        // Redirect to admin dashboard
+        router.push('/admin/dashboard');
       } else {
-        setError("Invalid admin credentials");
+        setError(data.message || 'Login failed');
       }
     } catch (err) {
-      setError(err.message || "Login failed");
+      setError('Network error. Please try again.');
+      console.error('Admin login error:', err);
     } finally {
       setLoading(false);
     }

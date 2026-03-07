@@ -1,11 +1,14 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Navbar from "../components/Navbar";
 import { LoadingSpinner } from "../components/Loading";
+import { getApiUrl } from "../../lib/apiUrl";
 
 export default function RegisterPage() {
+  const router = useRouter();
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -35,12 +38,29 @@ export default function RegisterPage() {
     }
 
     try {
-      console.log("Registration data:", formData);
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      alert("Registration functionality will be implemented soon!");
+      const { confirmPassword, ...registerData } = formData;
+      
+      const response = await fetch(getApiUrl('/api/auth/register'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(registerData)
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        // Store token and user data
+        localStorage.setItem('token', data.token);
+        localStorage.setItem('user', JSON.stringify(data.user));
+        
+        // Redirect to dashboard
+        router.push('/user/dashboard');
+      } else {
+        setError(data.message || 'Registration failed');
+      }
     } catch (err) {
-      setError(err.message || "Registration failed");
+      setError('Network error. Please try again.');
+      console.error('Registration error:', err);
     } finally {
       setLoading(false);
     }

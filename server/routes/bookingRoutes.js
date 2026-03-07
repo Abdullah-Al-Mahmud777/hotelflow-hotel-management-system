@@ -7,8 +7,10 @@ const {
   updateBookingStatus,
   deleteBooking
 } = require('../controllers/bookingController');
+const { optionalAuth } = require('../middlewares/auth');
 
-router.post('/', createBooking);
+// Use optional auth for booking creation - links to user if logged in
+router.post('/', optionalAuth, createBooking);
 router.get('/', getBookings);
 router.get('/:id', getBooking);
 router.put('/:id/status', updateBookingStatus);

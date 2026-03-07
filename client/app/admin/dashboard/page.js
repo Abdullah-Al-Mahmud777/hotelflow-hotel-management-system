@@ -5,10 +5,13 @@ import { useRouter } from "next/navigation";
 import AdminSidebar from "../components/AdminSidebar";
 import RoomManagement from "../components/RoomManagement";
 import BookingManagement from "../components/BookingManagement";
+import UserManagement from "../components/UserManagement";
+import ReviewManagement from "../components/ReviewManagement";
+import Analytics from "../components/Analytics";
 
 export default function AdminDashboard() {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState("rooms");
+  const [activeTab, setActiveTab] = useState("analytics");
   const [adminEmail, setAdminEmail] = useState("");
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -59,9 +62,11 @@ export default function AdminDashboard() {
       
       <main className="flex-1 overflow-y-auto">
         <div className="p-4 lg:p-8 pt-16 lg:pt-8">
+          {activeTab === "analytics" && <Analytics />}
           {activeTab === "rooms" && <RoomManagement />}
           {activeTab === "bookings" && <BookingManagement />}
-          {activeTab === "analytics" && <div className="text-gray-600">Analytics coming soon...</div>}
+          {activeTab === "users" && <UserManagement />}
+          {activeTab === "reviews" && <ReviewManagement />}
         </div>
       </main>
     </div>

@@ -10,6 +10,8 @@ export default function RoomDetailsPage() {
   const params = useParams();
   const router = useRouter();
   const [room, setRoom] = useState(null);
+  const [reviews, setReviews] = useState([]);
+  const [reviewsLoading, setReviewsLoading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [showBookingModal, setShowBookingModal] = useState(false);
   const [bookingData, setBookingData] = useState({
@@ -29,6 +31,19 @@ export default function RoomDetailsPage() {
     // Only fetch on client side
     if (typeof window !== 'undefined' && params.id) {
       fetchRoom();
+      fetchReviews();
+      
+      // Pre-fill user data if logged in
+      const userData = localStorage.getItem('user');
+      if (userData) {
+        const user = JSON.parse(userData);
+        setBookingData(prev => ({
+          ...prev,
+          guestName: user.name || '',
+          guestEmail: user.email || '',
+          guestPhone: user.phone || ''
+        }));
+      }
     }
   }, [params.id]);
 
@@ -69,6 +84,29 @@ export default function RoomDetailsPage() {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchReviews = async () => {
+    try {
+      setReviewsLoading(true);
+      const response = await fetch(getApiUrl(`/api/reviews/room/${params.id}`), {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        cache: 'no-store'
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setReviews(data.data || []);
+      }
+    } catch (error) {
+      console.error("Error fetching reviews:", error);
+      setReviews([]);
+    } finally {
+      setReviewsLoading(false);
     }
   };
 
@@ -116,12 +154,20 @@ export default function RoomDetailsPage() {
 
       console.log("Submitting booking:", bookingPayload);
       
-      const response = await fetch('http://localhost:5000/api/bookings', {
+      // Get token if user is logged in
+      const token = localStorage.getItem('token');
+      const headers = { 
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      };
+      
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      
+      const response = await fetch(getApiUrl('/api/bookings'), {
         method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        },
+        headers: headers,
         body: JSON.stringify(bookingPayload)
       });
 
@@ -252,6 +298,98 @@ export default function RoomDetailsPage() {
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+
+        {/* Reviews Section */}
+        <div className="max-w-6xl mx-auto px-4 py-8">
+          <div className="bg-white rounded-lg shadow-lg p-8 border border-gray-200">
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">Guest Reviews</h2>
+            
+            {reviewsLoading ? (
+              <div className="flex justify-center py-8">
+                <LoadingSpinner />
+              </div>
+            ) : reviews.length === 0 ? (
+              <div className="text-center py-12">
+                <div className="text-6xl mb-4">⭐</div>
+                <p className="text-gray-500 text-lg">No reviews yet</p>
+                <p className="text-gray-400 text-sm mt-2">Be the first to review this room!</p>
+              </div>
+            ) : (
+              <>
+                {/* Average Rating */}
+                <div className="bg-blue-50 rounded-lg p-6 mb-6 flex items-center justify-between">
+                  <div>
+                    <div className="flex items-center gap-2 mb-2">
+                      {[...Array(5)].map((_, i) => (
+                        <span key={i} className={`text-3xl ${i < Math.round(reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length) ? 'text-yellow-400' : 'text-gray-300'}`}>
+                          ⭐
+                        </span>
+                      ))}
+                    </div>
+                    <p className="text-gray-700">
+                      <span className="text-2xl font-bold text-gray-900">
+                        {(reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length).toFixed(1)}
+                      </span>
+                      <span className="text-gray-600"> out of 5</span>
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-3xl font-bold text-blue-600">{reviews.length}</p>
+                    <p className="text-gray-600">{reviews.length === 1 ? 'Review' : 'Reviews'}</p>
+                  </div>
+                </div>
+
+                {/* Reviews List */}
+                <div className="space-y-4">
+                  {reviews.map((review) => (
+                    <div key={review._id} className="border border-gray-200 rounded-lg p-6 hover:shadow-md transition">
+                      <div className="flex items-start gap-4">
+                        {/* User Avatar */}
+                        <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
+                          {review.user?.avatar ? (
+                            <img 
+                              src={review.user.avatar} 
+                              alt={review.user.name}
+                              className="w-full h-full rounded-full object-cover"
+                            />
+                          ) : (
+                            <span className="text-blue-600 text-xl font-bold">
+                              {review.user?.name?.charAt(0).toUpperCase() || '?'}
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Review Content */}
+                        <div className="flex-1">
+                          <div className="flex items-center justify-between mb-2">
+                            <h4 className="font-semibold text-gray-900">
+                              {review.user?.name || 'Anonymous'}
+                            </h4>
+                            <span className="text-sm text-gray-500">
+                              {new Date(review.createdAt).toLocaleDateString()}
+                            </span>
+                          </div>
+
+                          {/* Star Rating */}
+                          <div className="flex items-center gap-1 mb-3">
+                            {[...Array(5)].map((_, i) => (
+                              <span key={i} className={`text-lg ${i < review.rating ? 'text-yellow-400' : 'text-gray-300'}`}>
+                                ⭐
+                              </span>
+                            ))}
+                          </div>
+
+                          {/* Comment */}
+                          <p className="text-gray-700 leading-relaxed">{review.comment}</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
           </div>
         </div>
 

@@ -4,7 +4,7 @@ const Room = require('../models/Room');
 // Create booking
 exports.createBooking = async (req, res) => {
   try {
-    const { room, checkIn, checkOut, guestName, guestEmail, guestPhone } = req.body;
+    const { room, checkIn, checkOut, guestName, guestEmail, guestPhone, numberOfGuests, specialRequests, totalPrice } = req.body;
     
     // Check if room exists
     const roomData = await Room.findById(room);
@@ -21,7 +21,7 @@ exports.createBooking = async (req, res) => {
     
     const existingBooking = await Booking.findOne({
       room,
-      status: { $in: ['pending', 'approved'] }, // Only check pending and approved bookings
+      status: { $in: ['pending', 'approved'] },
       $or: [
         { checkIn: { $lte: checkOutDate }, checkOut: { $gte: checkInDate } }
       ]
@@ -34,20 +34,25 @@ exports.createBooking = async (req, res) => {
       });
     }
     
-    // Calculate total price
-    const days = Math.ceil((checkOutDate - checkInDate) / (1000 * 60 * 60 * 24));
-    const totalPrice = days * roomData.price;
-    
-    const booking = await Booking.create({
+    // Create booking data
+    const bookingData = {
       room,
       checkIn: checkInDate,
       checkOut: checkOutDate,
       guestName,
       guestEmail,
       guestPhone,
-      totalPrice
-    });
+      numberOfGuests: numberOfGuests || 1,
+      specialRequests: specialRequests || '',
+      totalPrice: totalPrice || (Math.ceil((checkOutDate - checkInDate) / (1000 * 60 * 60 * 24)) * roomData.price)
+    };
     
+    // Link to user if authenticated
+    if (req.user) {
+      bookingData.user = req.user.id;
+    }
+    
+    const booking = await Booking.create(bookingData);
     await booking.populate('room');
     
     res.status(201).json({

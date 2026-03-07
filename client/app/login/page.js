@@ -1,11 +1,14 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Navbar from "../components/Navbar";
 import { LoadingSpinner } from "../components/Loading";
+import { getApiUrl } from "../../lib/apiUrl";
 
 export default function LoginPage() {
+  const router = useRouter();
   const [formData, setFormData] = useState({
     email: "",
     password: ""
@@ -26,12 +29,27 @@ export default function LoginPage() {
     setError("");
 
     try {
-      console.log("Login data:", formData);
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      alert("Login functionality will be implemented soon!");
+      const response = await fetch(getApiUrl('/api/auth/login'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        // Store token and user data
+        localStorage.setItem('token', data.token);
+        localStorage.setItem('user', JSON.stringify(data.user));
+        
+        // Redirect to dashboard
+        router.push('/user/dashboard');
+      } else {
+        setError(data.message || 'Login failed');
+      }
     } catch (err) {
-      setError(err.message || "Login failed");
+      setError('Network error. Please try again.');
+      console.error('Login error:', err);
     } finally {
       setLoading(false);
     }
