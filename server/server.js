@@ -124,3 +124,6 @@ app.listen(PORT, () => {
     console.log(`🔗 Production URL: Check Vercel Dashboard`);
   }
 });
+
+// Export for Vercel
+module.exports = app;

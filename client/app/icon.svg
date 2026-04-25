@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <!-- Background -->
+  <rect width="32" height="32" rx="6" fill="#1a1a2e"/>
+  <!-- Hotel building -->
+  <rect x="6" y="14" width="20" height="14" fill="#c9a84c"/>
+  <!-- Roof / triangle -->
+  <polygon points="4,14 16,4 28,14" fill="#e8c96d"/>
+  <!-- Door -->
+  <rect x="13" y="20" width="6" height="8" rx="1" fill="#1a1a2e"/>
+  <!-- Windows row 1 -->
+  <rect x="8" y="16" width="4" height="3" rx="0.5" fill="#1a1a2e"/>
+  <rect x="20" y="16" width="4" height="3" rx="0.5" fill="#1a1a2e"/>
+  <!-- Windows row 2 -->
+  <rect x="8" y="21" width="4" height="3" rx="0.5" fill="#1a1a2e"/>
+  <rect x="20" y="21" width="4" height="3" rx="0.5" fill="#1a1a2e"/>
+</svg>
