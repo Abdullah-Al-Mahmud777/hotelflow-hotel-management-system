@@ -129,11 +129,11 @@ export default function Home() {
   };
 
   return (
-    <main className="min-h-screen bg-white text-slate-900" suppressHydrationWarning>
+    <div className="w-full min-h-screen bg-white text-slate-900 overflow-x-clip flex flex-col" suppressHydrationWarning>
       <Navbar />
       
       {/* HERO CAROUSEL SECTION */}
-      <section className="relative h-[70vh] md:h-[85vh] mt-16 overflow-hidden bg-slate-900" suppressHydrationWarning>
+      <section className="relative w-full h-[40vh] sm:h-[50vh] md:h-[85vh] mt-16 overflow-hidden bg-slate-900" suppressHydrationWarning>
         {mounted ? (
           <Carousel
             images={[
@@ -174,16 +174,16 @@ export default function Home() {
         {/* Hero Content Overlay */}
         <div className="absolute inset-0 flex items-center justify-center z-20 bg-black/20">
           <div className="text-center px-4">
-            <h1 className="text-5xl md:text-8xl font-black text-white mb-6 tracking-tighter drop-shadow-2xl">
+            <h1 className="text-2xl xs:text-3xl sm:text-5xl md:text-8xl font-black text-white mb-3 xs:mb-4 sm:mb-6 tracking-tighter drop-shadow-2xl">
               HOTEL<span className="text-blue-400">FLOW</span>
             </h1>
-            <p className="text-lg md:text-2xl text-white mb-10 max-w-2xl mx-auto font-medium drop-shadow-lg">
+            <p className="text-xs xs:text-sm sm:text-lg md:text-2xl text-white mb-4 xs:mb-6 sm:mb-10 max-w-2xl mx-auto font-medium drop-shadow-lg">
               Seamless booking for the modern traveler. 
               Experience luxury without the complexity.
             </p>
             <button 
               onClick={() => document.getElementById('search-bar')?.scrollIntoView({ behavior: 'smooth' })}
-              className="bg-white hover:bg-blue-600 hover:text-white text-slate-900 px-12 py-5 rounded-2xl text-lg font-bold transition-all transform hover:scale-105 shadow-2xl"
+              className="bg-white hover:bg-blue-600 hover:text-white text-slate-900 px-6 xs:px-8 sm:px-12 py-2.5 xs:py-3 sm:py-5 rounded-2xl text-sm xs:text-base sm:text-lg font-bold transition-all transform hover:scale-105 shadow-2xl"
             >
               Find Your Suite
             </button>
@@ -199,11 +199,11 @@ export default function Home() {
           mounted && isSticky 
           ? 'fixed top-20 left-0 right-0 z-40 shadow-lg' 
           : 'relative -mt-20'
-        } bg-white transition-all duration-300`}
+        } bg-white transition-all duration-300 w-full`}
       >
-        <div className="container mx-auto px-6 py-8">
-          <form onSubmit={handleSearch} className="bg-white rounded-2xl shadow-xl border border-gray-100 p-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
+        <div className="w-full max-w-full mx-auto px-2 sm:px-4 py-4 sm:py-6">
+          <form onSubmit={handleSearch} className="bg-white rounded-2xl shadow-xl border border-gray-100 p-3 sm:p-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-2 sm:gap-4">
               {/* Check In */}
               <div className="flex flex-col">
                 <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-2">
@@ -301,18 +301,18 @@ export default function Home() {
       </div>
 
       {/* DYNAMIC CONTENT AREA */}
-      <section id="results" className="container mx-auto px-4 py-20" suppressHydrationWarning>
-        <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-4">
-          <div>
-            <h2 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tighter uppercase">
+      <section id="results" className="w-full max-w-full px-2 sm:px-4 py-4 sm:py-8" suppressHydrationWarning>
+        <div className="flex flex-col md:flex-row md:items-end justify-between mb-4 sm:mb-8 gap-1 sm:gap-4">
+          <div className="w-full">
+            <h2 className="text-lg xs:text-xl sm:text-3xl md:text-5xl font-black text-slate-900 tracking-tighter uppercase">
               {searchResults.length > 0 ? "Your Search" : "Featured Stays"}
             </h2>
-            <p className="text-slate-500 font-medium mt-2">Handpicked selection of premium accommodation.</p>
+            <p className="text-slate-500 font-medium text-xs xs:text-sm mt-0.5 sm:mt-2">Handpicked selection of premium accommodation.</p>
           </div>
-          <div className="h-[2px] flex-grow mx-8 bg-slate-100 hidden lg:block mb-4" />
+          <div className="h-[2px] flex-grow mx-2 sm:mx-8 bg-slate-100 hidden lg:block mb-2 sm:mb-4" />
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10" suppressHydrationWarning>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3" suppressHydrationWarning>
           {mounted && initialLoading ? (
             // Show loading cards while fetching data
             <>
@@ -340,15 +340,15 @@ export default function Home() {
       </section>
 
       {/* CAROUSEL 1: Hotel Highlights */}
-      <section className="bg-gradient-to-br from-slate-50 to-blue-50 py-20" suppressHydrationWarning>
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
-            <h2 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tighter uppercase mb-4">
+      <section className="w-full bg-gradient-to-br from-slate-50 to-blue-50 py-6 sm:py-16" suppressHydrationWarning>
+        <div className="w-full max-w-full px-2 sm:px-4 mx-auto">
+          <div className="text-center mb-6 sm:mb-12">
+            <h2 className="text-xl xs:text-2xl sm:text-3xl md:text-5xl font-black text-slate-900 tracking-tighter uppercase mb-2 sm:mb-4">
               Experience Luxury
             </h2>
             <p className="text-slate-600 font-medium">Discover our world-class facilities and amenities</p>
           </div>
-          <div className="max-w-6xl mx-auto h-[500px]">
+          <div className="w-full max-w-full mx-auto h-[180px] xs:h-[240px] sm:h-[320px] md:h-[500px]">
             {mounted && (
               <Carousel
                 images={[
@@ -384,16 +384,16 @@ export default function Home() {
       </section>
 
       {/* CAROUSEL 2: Room Types Showcase */}
-      <section className="py-20" suppressHydrationWarning>
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
-            <h2 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tighter uppercase mb-4">
+      <section className="w-full py-10 sm:py-20" suppressHydrationWarning>
+        <div className="w-full max-w-full px-2 sm:px-4 mx-auto">
+          <div className="text-center mb-8 sm:mb-12">
+            <h2 className="text-2xl xs:text-3xl sm:text-4xl md:text-5xl font-black text-slate-900 tracking-tighter uppercase mb-2 sm:mb-4">
               Our Suites
             </h2>
             <p className="text-slate-600 font-medium">From deluxe rooms to presidential suites</p>
           </div>
-          <div className="grid md:grid-cols-2 gap-8 max-w-6xl mx-auto">
-            <div className="h-[400px]">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-8 w-full">
+            <div className="h-[200px] xs:h-[250px] sm:h-[300px] md:h-[400px]">
               {mounted && (
                 <Carousel
                   images={[
@@ -420,7 +420,7 @@ export default function Home() {
                 />
               )}
             </div>
-            <div className="h-[400px]">
+            <div className="h-[200px] xs:h-[250px] sm:h-[300px] md:h-[400px]">
               {mounted && (
                 <Carousel
                   images={[
@@ -452,17 +452,17 @@ export default function Home() {
       </section>
 
       {/* CAROUSEL 3: Guest Reviews */}
-      <section className="bg-gradient-to-br from-blue-50 to-indigo-50 py-20" suppressHydrationWarning>
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tighter uppercase mb-4">
+      <section className="w-full bg-gradient-to-br from-blue-50 to-indigo-50 py-6 sm:py-16" suppressHydrationWarning>
+        <div className="w-full max-w-full px-2 sm:px-4 mx-auto">
+          <div className="text-center mb-6 sm:mb-16">
+            <h2 className="text-xl xs:text-2xl sm:text-3xl md:text-5xl font-black text-slate-900 tracking-tighter uppercase mb-2 sm:mb-4">
               Guest Reviews
             </h2>
             <p className="text-slate-600 font-medium">What our guests say about their experience</p>
           </div>
           
           {reviews.length > 0 ? (
-            <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="w-full max-w-full mx-auto grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
               {reviews.slice(0, 6).map((review) => (
                 <div key={review._id} className="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-shadow">
                   <div className="flex items-center gap-3 mb-4">
@@ -513,7 +513,7 @@ export default function Home() {
           )}
         </div>
       </section>
-    </main>
+    </div>
   );
 }
 
@@ -524,8 +524,8 @@ function RoomCard({ room }) {
   const shouldUseImgTag = isLocalImage;
   
   return (
-    <div className="group bg-white rounded-[2.5rem] shadow-sm hover:shadow-2xl transition-all duration-500 overflow-hidden border border-slate-100">
-      <div className="relative h-72 overflow-hidden">
+    <div className="group bg-white rounded-2xl sm:rounded-[2.5rem] shadow-sm hover:shadow-2xl transition-all duration-500 overflow-hidden border border-slate-100">
+      <div className="relative h-40 xs:h-48 sm:h-56 md:h-72 overflow-hidden">
         {shouldUseImgTag && room.image ? (
           <img 
             src={room.image} 
@@ -546,27 +546,27 @@ function RoomCard({ room }) {
         </div>
       </div>
 
-      <div className="p-8">
-        <div className="flex justify-between items-start mb-4">
-          <h3 className="text-2xl font-black text-slate-900 leading-tight">
+      <div className="p-3 xs:p-4 sm:p-8">
+        <div className="flex justify-between items-start mb-2 xs:mb-3 sm:mb-4">
+          <h3 className="text-base xs:text-lg sm:text-2xl font-black text-slate-900 leading-tight">
             {room.name}
           </h3>
         </div>
         
-        <p className="text-slate-500 text-sm line-clamp-2 mb-8 font-medium">
+        <p className="text-slate-500 text-xs xs:text-sm line-clamp-2 mb-3 xs:mb-4 sm:mb-8 font-medium">
           {room.description || "Indulge in a space where modern design meets absolute comfort."}
         </p>
         
-        <div className="flex items-center justify-between pt-6 border-t border-slate-50">
+        <div className="flex items-center justify-between pt-2 xs:pt-3 sm:pt-6 border-t border-slate-50">
           <div>
-            <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest">Rate</p>
-            <p className="text-3xl font-black text-slate-900 tracking-tighter">
-              ${room.price}<span className="text-sm font-bold text-slate-400">/nt</span>
+            <p className="text-[8px] xs:text-[9px] sm:text-[10px] text-slate-400 font-black uppercase tracking-widest">Rate</p>
+            <p className="text-xl xs:text-2xl sm:text-3xl font-black text-slate-900 tracking-tighter">
+              ${room.price}<span className="text-xs xs:text-sm font-bold text-slate-400">/nt</span>
             </p>
           </div>
           <a 
             href={`/rooms/${room._id}`}
-            className="bg-slate-900 text-white px-7 py-4 rounded-2xl font-black hover:bg-blue-600 transition-all active:scale-95 shadow-lg shadow-slate-200"
+            className="bg-slate-900 text-white px-3 xs:px-5 sm:px-7 py-2 xs:py-3 sm:py-4 rounded-lg sm:rounded-2xl font-black text-xs xs:text-sm sm:text-base hover:bg-blue-600 transition-all active:scale-95 shadow-lg shadow-slate-200"
           >
             BOOK NOW
           </a>

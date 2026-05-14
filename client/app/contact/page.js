@@ -126,7 +126,7 @@ export default function ContactPage() {
                     onChange={handleInputChange}
                     required
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
-                    placeholder="John Doe"
+                    placeholder="name "
                   />
                 </div>
 
@@ -141,7 +141,7 @@ export default function ContactPage() {
                     onChange={handleInputChange}
                     required
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
-                    placeholder="john@example.com"
+                    placeholder="email@example.com"
                   />
                 </div>
               </div>
@@ -157,7 +157,7 @@ export default function ContactPage() {
                     value={formData.phone}
                     onChange={handleInputChange}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
-                    placeholder="+1 234 567 8900"
+                    
                   />
                 </div>
 

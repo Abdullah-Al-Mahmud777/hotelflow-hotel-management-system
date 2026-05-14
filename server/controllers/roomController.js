@@ -52,7 +52,13 @@ exports.getRooms = async (req, res) => {
 // Get featured rooms
 exports.getFeaturedRooms = async (req, res) => {
   try {
-    const rooms = await Room.find({ featured: true }).limit(6);
+    // Try to get featured rooms first
+    let rooms = await Room.find({ featured: true }).limit(6);
+    
+    // If no featured rooms exist, get all rooms
+    if (rooms.length === 0) {
+      rooms = await Room.find().limit(6);
+    }
     
     res.json({
       success: true,
