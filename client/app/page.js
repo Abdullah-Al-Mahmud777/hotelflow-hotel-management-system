@@ -49,7 +49,11 @@ export default function Home() {
     }
 
     try {
-      const response = await fetch(getApiUrl('/api/rooms/featured'), {
+      const apiUrl = getApiUrl('/api/rooms/featured');
+      console.log('[loadFeaturedRooms] Fetching from:', apiUrl);
+      console.log('[loadFeaturedRooms] NEXT_PUBLIC_API_URL:', process.env.NEXT_PUBLIC_API_URL);
+      
+      const response = await fetch(apiUrl, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -57,16 +61,21 @@ export default function Home() {
         cache: 'no-store'
       });
       
+      console.log('[loadFeaturedRooms] Response status:', response.status, response.statusText);
+      
       if (response.ok) {
         const data = await response.json();
-        console.log("Featured rooms loaded:", data.data?.length);
+        console.log("[loadFeaturedRooms] Featured rooms loaded:", data.data?.length);
         setFeaturedRooms(data.data || []);
       } else {
-        console.error('Failed to fetch rooms');
+        const errorText = await response.text();
+        console.error('[loadFeaturedRooms] Failed to fetch rooms:', response.status, response.statusText);
+        console.error('[loadFeaturedRooms] Error response:', errorText);
         setFeaturedRooms([]);
       }
     } catch (error) { 
-      console.error('Error loading rooms:', error);
+      console.error('[loadFeaturedRooms] Network error:', error.message);
+      console.error('[loadFeaturedRooms] Full error:', error);
       setFeaturedRooms([]);
     } finally {
       setInitialLoading(false);
@@ -198,7 +207,7 @@ export default function Home() {
         className={`${
           mounted && isSticky 
           ? 'fixed top-20 left-0 right-0 z-40 shadow-lg' 
-          : 'relative -mt-20'
+          : 'relative sm:-mt-20'
         } bg-white transition-all duration-300 w-full`}
       >
         <div className="w-full max-w-full mx-auto px-2 sm:px-4 py-4 sm:py-6">
@@ -312,7 +321,7 @@ export default function Home() {
           <div className="h-[2px] flex-grow mx-2 sm:mx-8 bg-slate-100 hidden lg:block mb-2 sm:mb-4" />
         </div>
 
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3" suppressHydrationWarning>
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3" suppressHydrationWarning>
           {mounted && initialLoading ? (
             // Show loading cards while fetching data
             <>
