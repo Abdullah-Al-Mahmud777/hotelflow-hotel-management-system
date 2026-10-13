@@ -23,41 +23,59 @@ export default function AdminLoginPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (loading) return; // extra guard against duplicate submissions
     setLoading(true);
     setError("");
 
+    // fetch() throws ONLY on network-level failures (server down, wrong
+    // port/host, offline, or a blocked CORS preflight) — never on HTTP
+    // 4xx/5xx. So this try/catch isolates "cannot reach the server".
+    let response;
     try {
-      const response = await fetch(getApiUrl('/api/auth/login'), {
+      response = await fetch(getApiUrl('/api/auth/login'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)
       });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        // Check if user is admin
-        if (data.user.role !== 'admin') {
-          setError('Access denied. Admin credentials required.');
-          return;
-        }
-
-        // Store admin token and data
-        localStorage.setItem('adminToken', data.token);
-        localStorage.setItem('adminEmail', data.user.email);
-        localStorage.setItem('adminUser', JSON.stringify(data.user));
-        
-        // Redirect to admin dashboard
-        router.push('/admin/dashboard');
-      } else {
-        setError(data.message || 'Login failed');
-      }
     } catch (err) {
-      setError('Network error. Please try again.');
-      console.error('Admin login error:', err);
-    } finally {
+      setError('Cannot reach the server. Please make sure the backend is running on http://localhost:5000, then try again.');
+      console.error('Admin login network error:', err);
       setLoading(false);
+      return;
     }
+
+    // The body may be empty or non-JSON on some failures — parse defensively.
+    let data = null;
+    try {
+      data = await response.json();
+    } catch {
+      data = null;
+    }
+
+    if (response.ok && data?.token) {
+      // Check if user is admin
+      if (data.user?.role !== 'admin') {
+        setError('Access denied. Admin credentials required.');
+        setLoading(false);
+        return;
+      }
+
+      // Store admin token and data
+      localStorage.setItem('adminToken', data.token);
+      localStorage.setItem('adminEmail', data.user.email);
+      localStorage.setItem('adminUser', JSON.stringify(data.user));
+
+        // Redirect to admin dashboard
+        router.push('/admin');
+    } else if (response.status === 401) {
+      setError('Invalid email or password.');
+    } else if (response.status >= 500) {
+      setError('Server error. Please try again in a moment.');
+    } else {
+      // Generic, safe fallback — never surfaces raw backend internals.
+      setError(data?.message || 'Login failed. Please try again.');
+    }
+    setLoading(false);
   };
 
   return (

@@ -71,3 +71,23 @@ describe('auth + reviews extensions', () => {
     assert.ok(r.includes('PUT /:id'));
   });
 });
+
+describe('hotels + inventory booking', () => {
+  it('hotel directory routes', () => {
+    const r = paths(require('../routes/hotelRoutes'));
+    assert.ok(r.includes('GET /'));
+    assert.ok(r.includes('GET /:id'));
+  });
+  it('room availability route', () => {
+    const r = paths(require('../routes/roomRoutes'));
+    assert.ok(r.includes('GET /:id/availability'));
+  });
+  it('booking owner routes', () => {
+    const r = paths(require('../routes/bookingRoutes'));
+    assert.ok(r.includes('POST /'));
+    assert.ok(r.includes('GET /my'));
+    assert.ok(r.includes('GET /:id'));
+    assert.ok(r.includes('PATCH /:id/cancel'));
+    assert.ok(r.includes('PUT /:id/status'));
+  });
+});

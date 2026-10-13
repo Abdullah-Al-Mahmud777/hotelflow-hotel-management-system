@@ -146,7 +146,7 @@ export default function Analytics() {
           <div className="flex items-center justify-center h-32">
             <div className="text-center">
               <p className="text-gray-600 text-sm mb-2">Total Revenue</p>
-              <p className="text-4xl font-bold text-green-600">${stats.totalRevenue}</p>
+              <p className="text-4xl font-bold text-green-600">৳{stats.totalRevenue}</p>
               <p className="text-gray-500 text-xs mt-2">From approved bookings</p>
             </div>
           </div>

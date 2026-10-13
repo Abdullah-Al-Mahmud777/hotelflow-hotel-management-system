@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import Navbar from "../components/Navbar";
 
 export default function AboutPage() {
@@ -45,10 +46,10 @@ export default function AboutPage() {
   ];
 
   const team = [
-    { name: "John Smith", role: "General Manager", image: "https://images.unsplash.com/photo-1560250097-0b93528c311a?w=400" },
-    { name: "Sarah Johnson", role: "Head Chef", image: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=400" },
-    { name: "Michael Chen", role: "Guest Relations", image: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=400" },
-    { name: "Emily Davis", role: "Spa Director", image: "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=400" }
+    { name: "Rahim Uddin", role: "General Manager" },
+    { name: "Nusrat Jahan", role: "Head Chef" },
+    { name: "Tanvir Ahmed", role: "Guest Relations" },
+    { name: "Farhana Akter", role: "Reservations Lead" }
   ];
 
   return (
@@ -58,8 +59,8 @@ export default function AboutPage() {
         {/* Hero Section */}
         <section className="relative h-[40vh] xs:h-[50vh] sm:h-[60vh] bg-gray-900">
           <Image
-            src="https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?auto=format&fit=crop&q=80&w=1600"
-            alt="Hotel Lobby"
+            src="/images/bd/hero/hero-sajek-clouds.jpg"
+            alt="Sea of clouds over Sajek Valley hills, Bangladesh"
             fill
             className="object-cover opacity-60"
           />
@@ -84,13 +85,13 @@ export default function AboutPage() {
                   We believe that every guest deserves personalized attention and world-class service. From our meticulously designed rooms to our exceptional dining experiences, every detail is crafted to exceed your expectations.
                 </p>
                 <p className="text-gray-700 text-base xs:text-lg leading-relaxed">
-                  Our team of dedicated professionals works tirelessly to ensure your stay is nothing short of perfect. Whether you're here for business or leisure, we're committed to making your experience memorable.
+                  Our team of dedicated professionals works tirelessly to ensure your stay is nothing short of perfect. Whether you&apos;re here for business or leisure, we&apos;re committed to making your experience memorable.
                 </p>
               </div>
               <div className="relative h-56 xs:h-72 sm:h-[400px] md:h-[500px] rounded-2xl overflow-hidden shadow-2xl">
                 <Image
-                  src="https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&q=80&w=800"
-                  alt="Hotel Interior"
+                  src="/images/bd/hotels/hotel-srimangal.jpg"
+                  alt="Tea estate around Tea Garden Resort, Srimangal, Bangladesh"
                   fill
                   className="object-cover"
                 />
@@ -144,13 +145,10 @@ export default function AboutPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-8">
               {team.map((member, index) => (
                 <div key={index} className="text-center group">
-                  <div className="relative h-40 xs:h-56 sm:h-64 mb-2 sm:mb-4 rounded-xl overflow-hidden shadow-lg">
-                    <Image
-                      src={member.image}
-                      alt={member.name}
-                      fill
-                      className="object-cover group-hover:scale-110 transition-transform duration-300"
-                    />
+                  <div className="relative h-40 xs:h-56 sm:h-64 mb-2 sm:mb-4 rounded-xl overflow-hidden shadow-lg bg-gradient-to-br from-blue-600 to-indigo-700 grid place-items-center">
+                    <span aria-label={member.name} className="grid h-20 w-20 place-items-center rounded-full bg-white/20 text-3xl font-black text-white">
+                      {member.name.split(" ").map((w) => w[0]).slice(0, 2).join("")}
+                    </span>
                   </div>
                   <h3 className="text-base xs:text-lg sm:text-xl font-bold text-gray-900 mb-0.5 sm:mb-1">{member.name}</h3>
                   <p className="text-blue-600 font-medium text-xs xs:text-sm sm:text-base">{member.role}</p>
@@ -168,12 +166,12 @@ export default function AboutPage() {
               To provide exceptional hospitality experiences that create lasting memories for our guests. We strive to exceed expectations through personalized service, attention to detail, and a commitment to excellence in everything we do.
             </p>
             <div className="flex flex-col xs:flex-row justify-center items-center xs:space-x-4 space-y-2 xs:space-y-0">
-              <a href="/rooms" className="bg-blue-600 text-white px-6 sm:px-8 py-2.5 sm:py-3 rounded-lg hover:bg-blue-700 transition font-semibold">
+              <Link href="/rooms" className="bg-blue-600 text-white px-6 sm:px-8 py-2.5 sm:py-3 rounded-lg hover:bg-blue-700 transition font-semibold">
                 Explore Rooms
-              </a>
-              <a href="/contact" className="bg-white text-gray-900 px-6 sm:px-8 py-2.5 sm:py-3 rounded-lg hover:bg-gray-100 transition font-semibold">
+              </Link>
+              <Link href="/contact" className="bg-white text-gray-900 px-6 sm:px-8 py-2.5 sm:py-3 rounded-lg hover:bg-gray-100 transition font-semibold">
                 Contact Us
-              </a>
+              </Link>
             </div>
           </div>
         </section>

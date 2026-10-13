@@ -3,17 +3,24 @@ const router = express.Router();
 const {
   createBooking,
   getBookings,
-  getBooking,
+  getMyBookings,
+  getBookingById,
+  cancelBooking,
   updateBookingStatus,
   deleteBooking
 } = require('../controllers/bookingController');
-const { optionalAuth } = require('../middlewares/auth');
+const { protect, restrictTo } = require('../middlewares/auth');
 
-// Use optional auth for booking creation - links to user if logged in
-router.post('/', optionalAuth, createBooking);
-router.get('/', getBookings);
-router.get('/:id', getBooking);
-router.put('/:id/status', updateBookingStatus);
-router.delete('/:id', deleteBooking);
+// NOTE: "/my" must be registered BEFORE "/:id" or "my" matches :id.
+// - Booking requires login (JWT); the owner always comes from the token.
+// - Reading/updating one booking is owner-or-admin; listing, status changes
+//   and deletes are admin-only.
+router.post('/', protect, createBooking);
+router.get('/my', protect, getMyBookings);
+router.get('/:id', protect, getBookingById);
+router.patch('/:id/cancel', protect, cancelBooking);
+router.get('/', protect, restrictTo('admin'), getBookings);
+router.put('/:id/status', protect, restrictTo('admin'), updateBookingStatus);
+router.delete('/:id', protect, restrictTo('admin'), deleteBooking);
 
 module.exports = router;

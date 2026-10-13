@@ -76,7 +76,7 @@ export default function Rewards({ loyalty, loading, onChanged }) {
           ) : (
             <>
               <p className="mt-3 text-4xl font-bold text-slate-900">{balance.toLocaleString()} <span className="text-sm font-medium text-slate-500">pts</span></p>
-              <p className="mt-1 text-xs text-slate-500">1 pt per $10 of approved spend · {loyalty?.earnedLifetime ?? 0} earned lifetime</p>
+              <p className="mt-1 text-xs text-slate-500">1 pt per ৳500 of approved spend · {loyalty?.earnedLifetime ?? 0} earned lifetime</p>
               <form onSubmit={redeem} className="mt-4 flex gap-2">
                 <label htmlFor="redeem-pts" className="sr-only">Points to redeem</label>
                 <input id="redeem-pts" type="number" min={100} step={100} value={points} onChange={(e) => setPoints(e.target.value)} className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none focus:border-blue-500" />
@@ -84,7 +84,7 @@ export default function Rewards({ loyalty, loading, onChanged }) {
                   {busy ? "…" : "Redeem"}
                 </button>
               </form>
-              <p className="mt-1 text-xs text-slate-400">100 pts = $5 promo coupon (min $50 spend).</p>
+              <p className="mt-1 text-xs text-slate-400">100 pts = ৳500 promo coupon (min ৳5,000 spend).</p>
               {history.length > 0 && (
                 <ul className="mt-4 max-h-48 space-y-2 overflow-y-auto">
                   {history.map((t) => (
@@ -113,7 +113,7 @@ export default function Rewards({ loyalty, loading, onChanged }) {
               Validate
             </button>
           </form>
-          {quote && <p className="mt-2 text-sm font-medium text-green-700">Valid on $200 stay: -${quote.discount} → ${quote.total}</p>}
+          {quote && <p className="mt-2 text-sm font-medium text-green-700">Valid on ৳15,000 stay: -৳{quote.discount} → ৳{quote.total}</p>}
 
           <div className="mt-4 space-y-2">
             {(!coupons || (coupons.data || []).length === 0) && (

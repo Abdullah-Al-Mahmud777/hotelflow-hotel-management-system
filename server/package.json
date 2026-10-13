@@ -7,6 +7,7 @@
     "dev": "nodemon server.js",
     "seed": "node config/seedRooms.js",
     "seed:admin": "node config/seedAdmin.js",
+    "seed:hotels": "node config/seedHotels.js",
     "seed:coupons": "node config/seedCoupons.js",
     "test": "node --test tests/"
   },

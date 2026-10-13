@@ -1,294 +1,414 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import Link from "next/link";
-import Image from "next/image";
-import { useRouter } from "next/navigation";
-import { Heart, GitCompare, X } from "lucide-react";
-import Navbar from "../components/Navbar";
-import { LoadingSpinner } from "../components/Loading";
-import { apiClient } from "../../lib/apiClient";
+// ---------------------------------------------------------------------------
+// HotelFlow Rooms page (/rooms) — lists ALL hotel rooms.
+// Data: backend first (GET /api/rooms), dummy rooms as fallback.
+// Search bar + sticky sidebar filter live (client-side); sort, wishlist,
+// validation (check-out after check-in), skeletons, empty state, load more.
+// ---------------------------------------------------------------------------
 
-const MAX_COMPARE = 3;
+import { useState, useEffect, useMemo } from "react";
+import {
+  CalendarDays,
+  Users,
+  Info,
+  X,
+  ChevronDown,
+  SlidersHorizontal,
+  Armchair,
+} from "lucide-react";
+import Navbar from "../components/hotelflow/Navbar";
+import Footer from "../components/hotelflow/Footer";
+import RoomCard, { RoomCardSkeleton } from "../components/hotelflow/RoomCard";
+import RoomFilters, {
+  DEFAULT_ROOM_FILTERS,
+  RoomFilterDrawer,
+} from "../components/hotelflow/RoomFilters";
+import {
+  DUMMY_ROOMS,
+  ROOM_SORT_OPTIONS,
+  normalizeRoom,
+} from "../components/hotelflow/roomsData";
+import { BRAND, PAGE_BG } from "../components/hotelflow/data";
+import { getApiUrl } from "../../lib/apiUrl";
+
+const PAGE_SIZE = 6;
+const LABEL = "text-[10px] font-bold uppercase tracking-wide text-[#9AA0B4]";
+const BOX =
+  "flex min-w-0 flex-1 items-center gap-2.5 rounded-xl border border-[#D9DDE8] bg-white px-3 py-2.5 transition focus-within:border-[#5B5BE6] focus-within:ring-2 focus-within:ring-[#5B5BE6]/15";
+const INPUT =
+  "mt-0.5 w-full bg-transparent text-[13px] font-semibold text-[#1B1D2A] outline-none";
+
+const INITIAL_SEARCH = {
+  checkIn: "",
+  checkOut: "",
+  type: "All Types",
+  guests: "2",
+  minPrice: "",
+  maxPrice: "",
+};
 
 export default function RoomsPage() {
-  const router = useRouter();
   const [rooms, setRooms] = useState([]);
-  const [filteredRooms, setFilteredRooms] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [selectedType, setSelectedType] = useState("all");
-  const [priceRange, setPriceRange] = useState({ min: 0, max: 1000 });
-  const [favIds, setFavIds] = useState(new Set());
-  const [compareIds, setCompareIds] = useState([]);
-  const [favBusy, setFavBusy] = useState(null);
+  const [usingFallback, setUsingFallback] = useState(false);
+  const [search, setSearch] = useState(INITIAL_SEARCH);
+  const [filters, setFilters] = useState(DEFAULT_ROOM_FILTERS);
+  const [sort, setSort] = useState("recommended");
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [searching, setSearching] = useState(false);
+  const [error, setError] = useState("");
+  const [bannerVisible, setBannerVisible] = useState(true);
+  const [favorites, setFavorites] = useState(new Set());
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
-  const authed = () => typeof window !== "undefined" && !!localStorage.getItem("token");
+  // Backend first, dummy data as fallback so the page always renders.
+  // When dates are set they ride along, so the server annotates each room
+  // with date-aware availability (remainingRooms / availableForDates).
+  const loadRooms = async (dates, done) => {
+    try {
+      const qs =
+        dates?.checkIn && dates?.checkOut
+          ? `?checkIn=${dates.checkIn}&checkOut=${dates.checkOut}`
+          : "";
+      const res = await fetch(getApiUrl(`/api/rooms${qs}`), { cache: "no-store" });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      const list = (data.data || []).map(normalizeRoom);
+      if (list.length) {
+        setRooms(list);
+        setUsingFallback(false);
+      } else {
+        setRooms(DUMMY_ROOMS);
+        setUsingFallback(true);
+      }
+    } catch {
+      setRooms(DUMMY_ROOMS);
+      setUsingFallback(true);
+    } finally {
+      done?.();
+    }
+  };
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      fetchRooms();
-      if (localStorage.getItem("token")) {
-        apiClient.get("/api/favorites", { params: { limit: 100 } })
-          .then(({ data }) => setFavIds(new Set((data.data || []).map((f) => String(f.room?._id || f.room)))))
-          .catch(() => {});
-      }
-    }
+    let cancelled = false;
+    loadRooms(null, () => {
+      if (!cancelled) setInitialLoading(false);
+    });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
-  useEffect(() => {
-    filterRooms();
-  }, [selectedType, priceRange, rooms]);
-
-  const fetchRooms = async () => {
-    try {
-      const response = await fetch('http://localhost:5000/api/rooms', {
-        method: 'GET',
-        headers: { 'Content-Type': 'application/json' },
-        cache: 'no-store'
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        setRooms(data.data || []);
-        setFilteredRooms(data.data || []);
-      }
-    } catch (error) {
-      console.error("Error fetching rooms:", error);
-    } finally {
-      setLoading(false);
-    }
+  const setS = (key) => (e) => setSearch((s) => ({ ...s, [key]: e.target.value }));
+  const setF = (patch) => {
+    setFilters((f) => ({ ...f, ...patch }));
+    setVisibleCount(PAGE_SIZE);
   };
+  const toggleFav = (id) =>
+    setFavorites((prev) => {
+      const n = new Set(prev);
+      if (n.has(id)) n.delete(id);
+      else n.add(id);
+      return n;
+    });
 
-  const toggleFavorite = async (roomId) => {
-    if (!authed()) {
-      router.push("/login");
+  // Check-out must be after check-in; then merge search into live filters.
+  const handleSearch = () => {
+    if (search.checkIn && search.checkOut && search.checkOut <= search.checkIn) {
+      setError("Check-out date must be after the check-in date.");
       return;
     }
-    if (favBusy) return;
-    setFavBusy(roomId);
-    try {
-      if (favIds.has(roomId)) {
-        await apiClient.delete(`/api/favorites/${roomId}`);
-        setFavIds((prev) => new Set([...prev].filter((x) => x !== roomId)));
-      } else {
-        await apiClient.post("/api/favorites", { roomId });
-        setFavIds((prev) => new Set([...prev, roomId]));
-      }
-    } catch (error) {
-      console.error("Wishlist error:", error?.response?.data || error.message);
-    } finally {
-      setFavBusy(null);
-    }
+    setError("");
+    setSearching(true);
+    // Re-query with the new dates so availability badges reflect them.
+    loadRooms(
+      { checkIn: search.checkIn, checkOut: search.checkOut },
+      () => setSearching(false)
+    );
+    setFilters((f) => ({
+      ...f,
+      types: search.type === "All Types" ? [] : [search.type.replace("All Types", "").trim()].filter(Boolean),
+      minPrice: search.minPrice !== "" ? Number(search.minPrice) : f.minPrice,
+      maxPrice: search.maxPrice !== "" ? Number(search.maxPrice) : f.maxPrice,
+    }));
+    setVisibleCount(PAGE_SIZE);
+    document.getElementById("room-results")?.scrollIntoView({ behavior: "smooth" });
   };
 
-  const toggleCompare = (roomId) => {
-    setCompareIds((prev) => {
-      if (prev.includes(roomId)) return prev.filter((x) => x !== roomId);
-      if (prev.length >= MAX_COMPARE) return prev;
-      return [...prev, roomId];
+  const filtered = useMemo(() => {
+    const guests = Number(search.guests) || 0;
+    const list = rooms.filter((r) => {
+      if (r.price < filters.minPrice || r.price > filters.maxPrice) return false;
+      if (filters.types.length && !filters.types.includes(r.type)) return false;
+      if (guests > 0 && r.capacity < guests) return false;
+      if (filters.amenities.length && !filters.amenities.every((a) => r.amenities[a])) return false;
+      if (filters.bedTypes.length && !filters.bedTypes.includes(r.bedType)) return false;
+      if (filters.availableOnly && !r.available) return false;
+      return true;
     });
+    if (sort === "price-asc") list.sort((a, b) => a.price - b.price);
+    else if (sort === "price-desc") list.sort((a, b) => b.price - a.price);
+    else if (sort === "rating-desc") list.sort((a, b) => b.rating - a.rating);
+    return list;
+  }, [rooms, filters, sort, search.guests]);
+
+  const visible = filtered.slice(0, visibleCount);
+  const resetAll = () => {
+    setSearch(INITIAL_SEARCH);
+    setFilters(DEFAULT_ROOM_FILTERS);
+    setError("");
+    setVisibleCount(PAGE_SIZE);
   };
 
-  const compareRooms = rooms.filter((r) => compareIds.includes(String(r._id)));
-
-  const filterRooms = () => {
-    let filtered = [...rooms];
-    
-    if (selectedType !== "all") {
-      filtered = filtered.filter(room => room.type === selectedType);
-    }
-    
-    filtered = filtered.filter(room => 
-      room.price >= priceRange.min && room.price <= priceRange.max
-    );
-    
-    setFilteredRooms(filtered);
-  };
-
-  if (loading) {
-    return (
-      <>
-        <Navbar />
-        <div className="min-h-screen bg-white flex items-center justify-center pt-20">
-          <LoadingSpinner />
-        </div>
-      </>
-    );
-  }
+  const sidebar = (
+    <RoomFilters
+      rooms={rooms}
+      filters={filters}
+      onChange={(f) => {
+        setFilters(f);
+        setVisibleCount(PAGE_SIZE);
+      }}
+      totalCount={filtered.length}
+    />
+  );
 
   return (
-    <>
+    <div className="min-h-screen font-sans text-slate-900" style={{ backgroundColor: PAGE_BG }}>
       <Navbar />
-      <main className="min-h-screen bg-white pt-20">
-        {/* Hero Section */}
-        <section className="bg-gradient-to-r from-blue-600 to-indigo-700 text-white py-20">
-          <div className="max-w-7xl mx-auto px-4 text-center">
-            <h1 className="text-5xl font-bold mb-4">Our Rooms & Suites</h1>
-            <p className="text-xl text-blue-100">Discover comfort and luxury in every stay</p>
-          </div>
-        </section>
+      <div className="mx-auto max-w-[1280px] px-4 pt-6 sm:px-6">
+        <h1 className="text-xl font-extrabold tracking-tight text-[#1B1D2A] sm:text-2xl">
+          Our Rooms
+        </h1>
+        <p className="mt-1 text-[13px] text-[#6B7089]">
+          Choose from our wide range of comfortable rooms and suites. Showing {filtered.length}{" "}
+          {filtered.length === 1 ? "room" : "rooms"}
+          {usingFallback ? " (sample listings)" : ""}.
+        </p>
 
-        <div className="max-w-7xl mx-auto px-4 py-12">
-          {/* Filters */}
-          <div className="bg-white rounded-lg shadow-md p-6 mb-8 border border-gray-200">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Room Type</label>
-                <select
-                  value={selectedType}
-                  onChange={(e) => setSelectedType(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-900"
-                >
-                  <option value="all">All Types</option>
-                  <option value="Standard">Standard</option>
-                  <option value="Deluxe">Deluxe</option>
-                  <option value="Suite">Suite</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Min Price: ${priceRange.min}</label>
-                <input
-                  type="range"
-                  min="0"
-                  max="500"
-                  value={priceRange.min}
-                  onChange={(e) => setPriceRange({ ...priceRange, min: parseInt(e.target.value) })}
-                  className="w-full"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Max Price: ${priceRange.max}</label>
-                <input
-                  type="range"
-                  min="0"
-                  max="1000"
-                  value={priceRange.max}
-                  onChange={(e) => setPriceRange({ ...priceRange, max: parseInt(e.target.value) })}
-                  className="w-full"
-                />
-              </div>
+        {/* Search / filter bar */}
+        <div className="mt-4 rounded-2xl border border-[#E3E6EF] bg-white p-2.5 shadow-[0_14px_36px_rgba(30,35,110,0.16)] sm:p-3">
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              handleSearch();
+            }}
+            className="flex flex-col gap-2"
+          >
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-4">
+              <label className={BOX}>
+                <CalendarDays className="h-5 w-5 shrink-0 text-[#9AA0B4]" />
+                <span className="flex w-full min-w-0 flex-col">
+                  <span className={LABEL}>Check-in date</span>
+                  <input type="date" value={search.checkIn} onChange={setS("checkIn")} className={INPUT} />
+                </span>
+              </label>
+              <label className={BOX}>
+                <CalendarDays className="h-5 w-5 shrink-0 text-[#9AA0B4]" />
+                <span className="flex w-full min-w-0 flex-col">
+                  <span className={LABEL}>Check-out date</span>
+                  <input type="date" value={search.checkOut} onChange={setS("checkOut")} className={INPUT} />
+                </span>
+              </label>
+              <label className={BOX}>
+                <Armchair className="h-5 w-5 shrink-0 text-[#9AA0B4]" />
+                <span className="flex w-full min-w-0 flex-col">
+                  <span className={LABEL}>Room type</span>
+                  <select value={search.type} onChange={setS("type")} className={`${INPUT} cursor-pointer`}>
+                    {["All Types", "Single", "Double", "Deluxe", "Suite", "Family"].map((t) => (
+                      <option key={t}>{t}</option>
+                    ))}
+                  </select>
+                </span>
+              </label>
+              <label className={BOX}>
+                <Users className="h-5 w-5 shrink-0 text-[#9AA0B4]" />
+                <span className="flex w-full min-w-0 flex-col">
+                  <span className={LABEL}>Guests</span>
+                  <input
+                    type="number"
+                    min={1}
+                    max={10}
+                    value={search.guests}
+                    onChange={setS("guests")}
+                    className={INPUT}
+                  />
+                </span>
+              </label>
             </div>
-          </div>
-
-          {/* Results Count */}
-          <div className="mb-6">
-            <p className="text-gray-600 font-medium">
-              Showing {filteredRooms.length} of {rooms.length} rooms
-            </p>
-          </div>
-
-          {/* Rooms Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {filteredRooms.map((room) => (
-              <div key={room._id} className="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200 hover:shadow-2xl transition-all duration-300">
-                <div className="relative h-64 bg-gray-200">
-                  {room.image && (room.image.includes('localhost') || room.image.includes('127.0.0.1')) ? (
-                    <img
-                      src={room.image}
-                      alt={room.name}
-                      className="w-full h-full object-cover"
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <div className="flex flex-1 gap-2">
+                <label className={BOX}>
+                  <span className="flex w-full min-w-0 flex-col">
+                    <span className={LABEL}>Min price</span>
+                    <input
+                      type="number"
+                      min={0}
+                      value={search.minPrice}
+                      onChange={setS("minPrice")}
+                      placeholder="৳0"
+                      className={`${INPUT} placeholder:text-[#B6BBCB]`}
                     />
-                  ) : (
-                    <Image
-                      src={room.image || "https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&q=80&w=800"}
-                      alt={room.name}
-                      fill
-                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                      className="object-cover"
+                  </span>
+                </label>
+                <label className={BOX}>
+                  <span className="flex w-full min-w-0 flex-col">
+                    <span className={LABEL}>Max price</span>
+                    <input
+                      type="number"
+                      min={0}
+                      value={search.maxPrice}
+                      onChange={setS("maxPrice")}
+                      placeholder="৳20,000"
+                      className={`${INPUT} placeholder:text-[#B6BBCB]`}
                     />
-                  )}
-                  <div className="absolute top-4 right-4 bg-blue-600 text-white px-3 py-1 rounded-full text-sm font-bold">
-                    {room.type}
-                  </div>
-                  <div className="absolute top-4 left-4 flex gap-2">
-                    <button
-                      onClick={() => toggleFavorite(String(room._id))}
-                      disabled={favBusy === String(room._id)}
-                      aria-label={favIds.has(String(room._id)) ? `Remove ${room.name} from wishlist` : `Save ${room.name} to wishlist`}
-                      aria-pressed={favIds.has(String(room._id))}
-                      className={`rounded-full p-2 shadow transition disabled:opacity-50 ${favIds.has(String(room._id)) ? "bg-red-600 text-white" : "bg-white/90 text-slate-600 hover:text-red-600"}`}
-                    >
-                      <Heart className={`w-4 h-4 ${favIds.has(String(room._id)) ? "fill-current" : ""}`} />
-                    </button>
-                    <button
-                      onClick={() => toggleCompare(String(room._id))}
-                      aria-pressed={compareIds.includes(String(room._id))}
-                      aria-label={`Add ${room.name} to comparison`}
-                      className={`rounded-full p-2 shadow transition ${compareIds.includes(String(room._id)) ? "bg-slate-900 text-white" : "bg-white/90 text-slate-600 hover:text-slate-900"}`}
-                    >
-                      <GitCompare className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-
-                <div className="p-6">
-                  <h3 className="text-2xl font-bold text-gray-900 mb-2">{room.name}</h3>
-                  <p className="text-gray-600 mb-4 line-clamp-2">{room.description}</p>
-
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center text-gray-600">
-                      <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z" />
-                      </svg>
-                      <span>{room.capacity} Guests</span>
-                    </div>
-                    <div className="text-3xl font-bold text-blue-600">
-                      ${room.price}
-                      <span className="text-sm text-gray-500">/night</span>
-                    </div>
-                  </div>
-
-                  <Link
-                    href={`/rooms/${room._id}`}
-                    className="block w-full bg-blue-600 text-white text-center py-3 rounded-lg hover:bg-blue-700 transition font-semibold"
-                  >
-                    View Details & Book
-                  </Link>
-                </div>
+                  </span>
+                </label>
               </div>
-            ))}
-          </div>
-
-          {filteredRooms.length === 0 && (
-            <div className="text-center py-20">
-              <div className="text-6xl mb-4">🏨</div>
-              <h3 className="text-2xl font-bold text-gray-800 mb-2">No Rooms Found</h3>
-              <p className="text-gray-600">Try adjusting your filters</p>
-            </div>
-          )}
-        </div>
-
-        {/* Compare tray */}
-        {compareRooms.length > 0 && (
-          <div className="fixed bottom-4 left-1/2 z-40 w-[calc(100%-2rem)] max-w-3xl -translate-x-1/2 rounded-2xl border border-slate-200 bg-white p-4 shadow-xl" role="region" aria-label="Compare selected rooms">
-            <div className="flex items-center justify-between gap-2">
-              <p className="text-sm font-bold text-slate-900">
-                Compare ({compareRooms.length}/{MAX_COMPARE})
-              </p>
-              <button onClick={() => setCompareIds([])} className="text-xs font-medium text-slate-500 hover:text-slate-900">
-                Clear all
+              <button
+                type="submit"
+                disabled={searching}
+                className="shrink-0 rounded-xl px-8 py-3 text-sm font-bold text-white transition hover:brightness-110 active:scale-95 disabled:opacity-60"
+                style={{ backgroundColor: BRAND }}
+              >
+                {searching ? "Searching…" : "Search"}
               </button>
             </div>
-            <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-3">
-              {compareRooms.map((r) => (
-                <div key={r._id} className="flex items-center justify-between gap-2 rounded-xl bg-slate-50 px-3 py-2 text-sm">
-                  <span className="truncate font-medium text-slate-900">{r.name} · ${r.price}</span>
-                  <button onClick={() => toggleCompare(String(r._id))} aria-label={`Remove ${r.name} from comparison`} className="text-slate-400 hover:text-red-600">
-                    <X className="h-4 w-4" />
+            {error && <p className="text-[12.5px] font-bold text-red-600">{error}</p>}
+          </form>
+        </div>
+
+        {/* Two-column layout */}
+        <main id="room-results" className="grid scroll-mt-20 grid-cols-1 gap-5 py-6 lg:grid-cols-[280px_minmax(0,1fr)]">
+          <aside className="hidden lg:block">
+            <div className="sticky top-20">{sidebar}</div>
+          </aside>
+          <div className="lg:hidden">
+            <button
+              type="button"
+              onClick={() => setDrawerOpen(true)}
+              className="flex w-full items-center justify-between rounded-2xl border border-[#E3E6EF] bg-white px-4 py-3 text-sm font-bold text-[#1B1D2A] shadow-sm"
+            >
+              <span className="flex items-center gap-2">
+                <SlidersHorizontal className="h-4 w-4" style={{ color: BRAND }} />
+                Filters ({filtered.length})
+              </span>
+              <ChevronDown className="h-4 w-4 text-slate-400" />
+            </button>
+          </div>
+
+          <section className="min-w-0">
+            {bannerVisible && (
+              <div className="mb-4 flex items-start gap-2.5 rounded-xl border border-[#E3E6EF] bg-[#EEF0F5] px-4 py-3 text-[13px] shadow-sm">
+                <Info className="mt-0.5 h-4 w-4 shrink-0 text-[#5A5F79]" />
+                <p className="flex-1 font-medium text-[#3D4159]">
+                  Based on your filters, we&apos;re showing available rooms only when that filter is on.
+                </p>
+                <button
+                  type="button"
+                  aria-label="Dismiss notice"
+                  onClick={() => setBannerVisible(false)}
+                  className="rounded p-0.5 text-[#5A5F79] hover:bg-black/5"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            )}
+
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+              <p className="text-[13px] text-[#6B7089]">
+                <span className="font-extrabold text-[#1B1D2A]">Showing {visible.length} of {filtered.length} rooms</span>
+              </p>
+              <label className="flex items-center gap-2 rounded-xl border border-[#E3E6EF] bg-white px-3 py-2 text-[12.5px] font-semibold shadow-sm">
+                <span className="text-[#9AA0B4]">Sort by:</span>
+                <select
+                  value={sort}
+                  onChange={(e) => {
+                    setSort(e.target.value);
+                    setVisibleCount(PAGE_SIZE);
+                  }}
+                  className="cursor-pointer bg-transparent font-bold text-[#1B1D2A] outline-none"
+                >
+                  {ROOM_SORT_OPTIONS.map((o) => (
+                    <option key={o.value} value={o.value}>
+                      {o.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+
+            <div className="space-y-4">
+              {initialLoading || searching ? (
+                <>
+                  <RoomCardSkeleton />
+                  <RoomCardSkeleton />
+                  <RoomCardSkeleton />
+                </>
+              ) : visible.length ? (
+                visible.map((room) => (
+                  <RoomCard
+                    key={room.id}
+                    room={room}
+                    isFavorite={favorites.has(room.id)}
+                    onToggleFavorite={() => toggleFav(room.id)}
+                    checkIn={search.checkIn}
+                    checkOut={search.checkOut}
+                    guests={search.guests}
+                  />
+                ))
+              ) : (
+                <div className="rounded-2xl border border-[#E3E6EF] bg-white p-12 text-center shadow-sm">
+                  <h3 className="font-extrabold text-[#1B1D2A]">
+                    No rooms found. Try changing your filters.
+                  </h3>
+                  <p className="mt-1 text-[13px] text-[#6B7089]">
+                    Try widening your budget or removing some filters.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={resetAll}
+                    className="mt-4 rounded-xl px-5 py-2.5 text-[13px] font-bold text-white"
+                    style={{ backgroundColor: BRAND }}
+                  >
+                    Reset all filters
                   </button>
                 </div>
-              ))}
+              )}
             </div>
-            {compareRooms.length >= 2 && (
-              <p className="mt-2 text-xs text-slate-500">
-                Full side-by-side table lives in Dashboard → Wishlist & Compare.
-              </p>
+
+            {!initialLoading && !searching && visibleCount < filtered.length && (
+              <div className="mt-6 text-center">
+                <button
+                  type="button"
+                  onClick={() => setVisibleCount((c) => c + PAGE_SIZE)}
+                  className="rounded-xl border-2 px-8 py-3 text-sm font-bold transition hover:text-white active:scale-95"
+                  style={{ borderColor: BRAND, color: BRAND }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = BRAND;
+                    e.currentTarget.style.color = "#fff";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = "transparent";
+                    e.currentTarget.style.color = BRAND;
+                  }}
+                >
+                  Load more rooms ({filtered.length - visibleCount} remaining)
+                </button>
+              </div>
             )}
-          </div>
-        )}
-      </main>
-    </>
+          </section>
+        </main>
+      </div>
+      <Footer />
+
+      <RoomFilterDrawer
+        open={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        onClear={() => setF(DEFAULT_ROOM_FILTERS)}
+      >
+        {sidebar}
+      </RoomFilterDrawer>
+    </div>
   );
 }

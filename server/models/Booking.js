@@ -39,6 +39,11 @@ const bookingSchema = new mongoose.Schema({
     type: Number,
     default: 1
   },
+  rooms: {
+    type: Number,
+    default: 1,
+    min: 1
+  },
   specialRequests: {
     type: String,
     default: ''
@@ -47,8 +52,26 @@ const bookingSchema = new mongoose.Schema({
   discount: { type: Number, default: 0, min: 0 },
   status: {
     type: String,
-    enum: ['pending', 'approved', 'rejected', 'cancelled'],
+    enum: ['pending', 'approved', 'rejected', 'cancelled', 'completed'],
     default: 'pending'
+  },
+  bookingRef: {
+    type: String,
+    unique: true,
+    sparse: true
+  },
+  paymentStatus: {
+    type: String,
+    enum: ['pending', 'paid', 'failed'],
+    default: 'pending'
+  },
+  paymentMethod: {
+    type: String,
+    default: 'Cash at hotel'
+  },
+  arrivalTime: {
+    type: String,
+    default: ''
   },
   approvedBy: {
     type: String,

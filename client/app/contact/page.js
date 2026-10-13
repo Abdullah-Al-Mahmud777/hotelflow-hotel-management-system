@@ -93,7 +93,7 @@ export default function ContactPage() {
           <div className="text-center mb-12">
             <h1 className="text-4xl font-bold text-gray-900 mb-4">Contact Us</h1>
             <p className="text-gray-600 text-lg">
-              Have a question or need assistance? We're here to help!
+              Have a question or need assistance? We&apos;re here to help!
             </p>
           </div>
 
@@ -103,7 +103,7 @@ export default function ContactPage() {
                 <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                 </svg>
-                <span className="font-medium">Message sent successfully! We'll get back to you soon.</span>
+                <span className="font-medium">Message sent successfully! We&apos;ll get back to you soon.</span>
               </div>
             )}
             
@@ -207,19 +207,19 @@ export default function ContactPage() {
             <div className="bg-blue-50 rounded-lg p-6 text-center">
               <div className="text-4xl mb-3">📧</div>
               <h3 className="font-semibold text-gray-900 mb-2">Email</h3>
-              <p className="text-gray-600">info@hotelflow.com</p>
+              <p className="text-gray-600">support@hotelflow.com.bd</p>
             </div>
 
             <div className="bg-blue-50 rounded-lg p-6 text-center">
               <div className="text-4xl mb-3">📞</div>
               <h3 className="font-semibold text-gray-900 mb-2">Phone</h3>
-              <p className="text-gray-600">+1 (555) 123-4567</p>
+              <p className="text-gray-600">+880 1712-345678</p>
             </div>
 
             <div className="bg-blue-50 rounded-lg p-6 text-center">
               <div className="text-4xl mb-3">📍</div>
               <h3 className="font-semibold text-gray-900 mb-2">Address</h3>
-              <p className="text-gray-600">123 Hotel Street, City</p>
+              <p className="text-gray-600">House 25, Road 12, Dhanmondi, Dhaka 1209, Bangladesh</p>
             </div>
           </div>
         </div>

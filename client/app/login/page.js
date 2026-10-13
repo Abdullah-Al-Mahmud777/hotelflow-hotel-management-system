@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Navbar from "../components/Navbar";
 import { LoadingSpinner } from "../components/Loading";
 import { getApiUrl } from "../../lib/apiUrl";
+import { safeRedirect } from "../lib/auth";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -15,6 +16,18 @@ export default function LoginPage() {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  // Post-login destination (?redirect=...), read client-side to avoid a
+  // Suspense boundary. Validated same-origin on use (see lib/auth).
+  const [redirect, setRedirect] = useState("/rooms");
+
+  useEffect(() => {
+    try {
+      const q = new URLSearchParams(window.location.search).get("redirect");
+      if (q) setRedirect(q);
+    } catch {
+      /* keep default */
+    }
+  }, []);
 
   const handleChange = (e) => {
     setFormData({
@@ -41,9 +54,9 @@ export default function LoginPage() {
         // Store token and user data
         localStorage.setItem('token', data.token);
         localStorage.setItem('user', JSON.stringify(data.user));
-        
-        // Redirect to dashboard
-        router.push('/user/dashboard');
+
+        // Back to the exact page the user came from (validated same-origin).
+        router.push(safeRedirect(redirect));
       } else {
         setError(data.message || 'Login failed');
       }
@@ -128,8 +141,8 @@ export default function LoginPage() {
 
           <div className="mt-6 text-center">
             <p className="text-black">
-              Don't have an account?{" "}
-              <Link href="/register" className="text-blue-600 hover:text-blue-700 font-semibold">
+              Don&apos;t have an account?{" "}
+              <Link href={`/register?redirect=${encodeURIComponent(redirect)}`} className="text-blue-600 hover:text-blue-700 font-semibold">
                 Register here
               </Link>
             </p>

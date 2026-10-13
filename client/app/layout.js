@@ -12,14 +12,32 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
-  title: "HotelFlow - Hotel Management System",
-  description: "Modern hotel management system built with Next.js and Express",
+  title: "HotelFlow - Find Your Perfect Stay in Bangladesh",
+  description: "Book hotels, resorts and rooms across Bangladesh, from Cox's Bazar beaches to Sylhet tea gardens.",
   icons: {
     icon: [
       { url: '/favicon.ico' },
       { url: '/icon.svg', type: 'image/svg+xml' },
     ],
-    apple: '/apple-icon.png',
+    apple: '/apple-touch-icon.png',
+  },
+  openGraph: {
+    title: "HotelFlow - Find Your Perfect Stay in Bangladesh",
+    description: "Book hotels, resorts and rooms across Bangladesh.",
+    images: [
+      {
+        url: '/images/bd/hero/hero-coxsbazar-beach.jpg',
+        width: 1920,
+        height: 1280,
+        alt: "Sunset over Cox's Bazar sea beach, Bangladesh — HotelFlow",
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: "HotelFlow - Find Your Perfect Stay in Bangladesh",
+    description: "Book hotels, resorts and rooms across Bangladesh.",
+    images: ['/images/bd/hero/hero-coxsbazar-beach.jpg'],
   },
 };
 

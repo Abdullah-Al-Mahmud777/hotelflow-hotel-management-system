@@ -59,13 +59,13 @@ describe('coupon math', () => {
 });
 
 describe('loyalty math', () => {
-  it('earns 1pt per $10', () => {
-    assert.equal(loyaltyEarned(352), 35);
-    assert.equal(loyaltyEarned(9.99), 0);
+  it('earns 1pt per ৳500', () => {
+    assert.equal(loyaltyEarned(12500), 25);
+    assert.equal(loyaltyEarned(499), 0);
   });
   it('redeem requires 100pt minimum', () => {
     assert.equal(redeemValue(50).ok, false);
-    assert.deepEqual(redeemValue(250), { ok: true, pointsUsed: 200, couponValue: 10 });
+    assert.deepEqual(redeemValue(250), { ok: true, pointsUsed: 200, couponValue: 1000 });
   });
 });
 
