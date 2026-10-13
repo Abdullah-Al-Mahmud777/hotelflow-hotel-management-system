@@ -6,8 +6,9 @@ require("dotenv").config();
 
 const app = express();
 
-// CORS configuration - Allowing your live Next.js frontend
-const allowedOrigins = process.env.NODE_ENV === 'production' 
+// ===== 1. CORS — MUST come before all routes =====
+// Dev: Next.js Turbopack on :3000/:3001. Prod: FRONTEND_URL + Vercel previews.
+const allowedOrigins = process.env.NODE_ENV === 'production'
   ? [
       process.env.FRONTEND_URL,
       'https://hotelflow-hotel-management-system-d.vercel.app',
@@ -22,24 +23,18 @@ const allowedOrigins = process.env.NODE_ENV === 'production'
 
 const corsOptions = {
   origin: function (origin, callback) {
-    // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) return callback(null, true);
-    
-    // In development, allow all localhost origins
-    if (process.env.NODE_ENV !== 'production' && origin && origin.includes('localhost')) {
+    if (!origin) return callback(null, true); // curl / server-to-server
+    if (process.env.NODE_ENV !== 'production' && origin.includes('localhost')) {
       return callback(null, true);
     }
-    
-    // Allow all Vercel preview URLs
     if (origin && origin.includes('.vercel.app')) {
       return callback(null, true);
     }
-    
     if (allowedOrigins.indexOf(origin) !== -1) {
       callback(null, true);
     } else {
       console.log("Blocked by CORS:", origin);
-      callback(null, false);
+      callback(new Error(`CORS blocked origin: ${origin}`));
     }
   },
   credentials: true,
@@ -49,7 +44,18 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
+
+// ===== 2. Body parsers — MUST come before routes =====
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// ===== 3. Request logger (proves Express actually received the call) =====
+app.use((req, res, next) => {
+  if (req.path.startsWith('/api/v1')) {
+    console.log(`[Express] ${req.method} ${req.path} origin=${req.headers.origin || 'none'}`);
+  }
+  next();
+});
 
 // Serve uploaded files
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
@@ -68,6 +74,11 @@ const authRoutes = require('./routes/authRoutes');
 const reviewRoutes = require('./routes/reviewRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const contactRoutes = require('./routes/contactRoutes');
+const mainRouter = require('./routes/dashboardRoutes');
+const favoritesRoutes = require('./routes/favoritesRoutes');
+const rewardsRoutes = require('./routes/rewardsRoutes');
+const supportRoutes = require('./routes/supportRoutes');
+const aiRoutes = require('./routes/aiRoutes');
 
 app.use('/api/rooms', roomRoutes);
 app.use('/api/bookings', bookingRoutes);
@@ -76,6 +87,12 @@ app.use('/api/auth', authRoutes);
 app.use('/api/reviews', reviewRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/contacts', contactRoutes);
+app.use('/api/favorites', favoritesRoutes);
+app.use('/api/rewards', rewardsRoutes);
+app.use('/api/support', supportRoutes);
+// Versioned API — single source of truth for /api/v1/*
+app.use('/api/v1', mainRouter);
+app.use('/api/v1/ai', aiRoutes);
 
 // Base route
 app.get("/", (req, res) => {

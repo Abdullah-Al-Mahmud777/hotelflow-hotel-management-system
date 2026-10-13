@@ -6,6 +6,7 @@ const { protect } = require('../middlewares/auth');
 // Protected routes
 router.post('/', protect, reviewController.createReview);
 router.get('/my-reviews', protect, reviewController.getUserReviews);
+router.put('/:id', protect, reviewController.updateReview);
 router.delete('/:id', protect, reviewController.deleteReview);
 
 // Public routes

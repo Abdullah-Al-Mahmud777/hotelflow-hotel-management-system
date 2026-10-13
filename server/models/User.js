@@ -33,6 +33,13 @@ const userSchema = new mongoose.Schema({
     type: String,
     default: ''
   },
+  preferences: {
+    roomType: { type: String, enum: ['Standard', 'Deluxe', 'Suite', 'Any'], default: 'Any' },
+    amenities: { type: [String], default: [] },
+    bedType: { type: String, default: '' },
+    dietary: { type: String, default: '' },
+    notes: { type: String, default: '', maxlength: 500 },
+  },
   isActive: {
     type: Boolean,
     default: true

@@ -148,6 +148,14 @@ exports.updateReviewStatus = async (req, res) => {
     await review.populate('user', 'name email avatar');
     await review.populate('room', 'name type');
 
+    try {
+      const { notify } = require('../utils/notify');
+      await notify(review.user?._id || review.user, status === 'approved' ? 'review-approved' : 'review-rejected',
+        status === 'approved' ? `Review published: ${review.room?.name || 'Room'}` : `Review not approved: ${review.room?.name || 'Room'}`);
+    } catch (notifyErr) {
+      console.error('[review-notify]', notifyErr.message);
+    }
+
     res.status(200).json({
       success: true,
       message: `Review ${status} successfully`,
