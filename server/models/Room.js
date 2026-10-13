@@ -9,7 +9,7 @@ const roomSchema = new mongoose.Schema({
   type: {
     type: String,
     required: true,
-    enum: ['Standard', 'Deluxe', 'Suite'],
+    enum: ['Standard', 'Single', 'Double', 'Deluxe', 'Suite', 'Family'],
     default: 'Standard'
   },
   price: {
@@ -39,6 +39,16 @@ const roomSchema = new mongoose.Schema({
   availability: {
     type: Boolean,
     default: true
+  },
+  hotel: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Hotel',
+    default: null
+  },
+  totalRooms: {
+    type: Number,
+    default: 1,
+    min: 1
   },
   featured: {
     type: Boolean,

@@ -1,11 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import Navbar from "../components/Navbar";
 import { LoadingSpinner } from "../components/Loading";
 import { getApiUrl } from "../../lib/apiUrl";
+import { safeRedirect } from "../lib/auth";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -18,6 +18,18 @@ export default function RegisterPage() {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  // Post-registration destination (?redirect=...), read client-side to
+  // avoid a Suspense boundary. Validated same-origin on use (see lib/auth).
+  const [redirect, setRedirect] = useState("/rooms");
+
+  useEffect(() => {
+    try {
+      const q = new URLSearchParams(window.location.search).get("redirect");
+      if (q) setRedirect(q);
+    } catch {
+      /* keep default */
+    }
+  }, []);
 
   const handleChange = (e) => {
     setFormData({
@@ -52,9 +64,9 @@ export default function RegisterPage() {
         // Store token and user data
         localStorage.setItem('token', data.token);
         localStorage.setItem('user', JSON.stringify(data.user));
-        
-        // Redirect to dashboard
-        router.push('/user/dashboard');
+
+        // Back to the exact page the user came from (validated same-origin).
+        router.push(safeRedirect(redirect));
       } else {
         setError(data.message || 'Registration failed');
       }
@@ -68,7 +80,6 @@ export default function RegisterPage() {
 
   return (
     <>
-      <Navbar />
       <main className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center px-4 py-24">
         <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8">
           <div className="text-center mb-8">
@@ -127,7 +138,7 @@ export default function RegisterPage() {
                 onChange={handleChange}
                 required
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black"
-                placeholder="+1 (555) 000-0000"
+                placeholder="+880 1XXX-XXXXXX"
               />
             </div>
 
@@ -177,8 +188,8 @@ export default function RegisterPage() {
           <div className="mt-6 text-center">
             <p className="text-black">
               Already have an account?{" "}
-              <Link href="/login" className="text-blue-600 hover:text-blue-700 font-semibold">
-                Login here
+              <Link href={`/login?redirect=${encodeURIComponent(redirect)}`} className="text-blue-600 hover:text-blue-700 font-semibold">
+                Sign in
               </Link>
             </p>
           </div>

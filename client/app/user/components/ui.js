@@ -21,7 +21,7 @@ export function formatDateTime(v) {
 
 export function formatPrice(n) {
   const v = Number(n) || 0;
-  return `$${v.toLocaleString()}`;
+  return `৳${v.toLocaleString("en-IN")}`;
 }
 
 // ---------- consistent status badges (single source of truth) ----------

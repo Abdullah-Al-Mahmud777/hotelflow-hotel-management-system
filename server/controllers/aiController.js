@@ -33,7 +33,7 @@ async function callProvider(messages) {
 async function fallbackAnswer(text, user) {
   const q = String(text || '').toLowerCase();
   const rooms = await Room.find({ availability: true }).sort({ price: 1 }).limit(20).lean();
-  const fmt = (r) => `${r.name} (${r.type}, $${r.price}/night, sleeps ${r.capacity})`;
+  const fmt = (r) => `${r.name} (${r.type}, ৳${r.price}/night, sleeps ${r.capacity})`;
   const pick = (pred) => rooms.filter(pred).slice(0, 3).map(fmt).join('; ') || 'none available right now';
 
   if (/(cancel|refund)/.test(q)) {
@@ -58,13 +58,13 @@ async function fallbackAnswer(text, user) {
     return `Based on ${mine.length ? 'your past stays' : 'popular picks'} (${favType} preference), I suggest: ${pick((r) => r.type === favType)}. Want family capacity or a Suite upgrade?`;
   }
   if (/(book|availab|reserve)/.test(q)) {
-    return `Currently ${rooms.length} room(s) bookable, from $${rooms[0]?.price ?? '—'}/night. Top picks: ${pick(() => true)}. Share dates + guests and I'll narrow it down.`;
+    return `Currently ${rooms.length} room(s) bookable, from ৳${rooms[0]?.price ?? '—'}/night. Top picks: ${pick(() => true)}. Share dates + guests and I'll narrow it down.`;
   }
   if (/(review|rating)/.test(q)) {
     return 'You can review approved stays from My Reviews. Ratings are 1–5 stars; edited reviews return to pending for re-approval.';
   }
   if (/(loyalty|points|reward|coupon|promo|discount)/.test(q)) {
-    return 'Loyalty: 1 point per $10 of approved spend. 100+ points redeem for promo coupons in Rewards. Apply codes at booking for instant discounts.';
+    return 'Loyalty: 1 point per ৳500 of approved spend. 100+ points redeem for promo coupons in Rewards. Apply codes at booking for instant discounts.';
   }
   if (/(hi|hello|hey|help)/.test(q)) {
     return `Hi${user?.name ? ` ${user.name.split(' ')[0]}` : ''}! I can help with rooms, prices, bookings, cancellations, loyalty and reviews. What are your dates?`;

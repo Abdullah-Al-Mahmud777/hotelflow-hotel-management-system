@@ -26,11 +26,12 @@ export default function WriteReviewPage() {
 
   const fetchBooking = async (token) => {
     try {
-      const response = await fetch(getApiUrl('/api/bookings'), {
+      // Owner-scoped endpoint (the admin-only list no longer serves guests).
+      const response = await fetch(getApiUrl('/api/bookings/my'), {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await response.json();
-      
+
       if (data.success) {
         const foundBooking = data.data.find(b => b._id === params.bookingId);
         setBooking(foundBooking);

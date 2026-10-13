@@ -182,7 +182,7 @@ export default function RoomManagement() {
                   )}
                 </td>
                 <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500 hidden sm:table-cell">{room.type}</td>
-                <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500">${room.price}</td>
+                <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500">৳{room.price}</td>
                 <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500 hidden md:table-cell">{room.capacity}</td>
                 <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500 hidden lg:table-cell">
                   {room.featured ? "✅" : "❌"}
@@ -287,11 +287,11 @@ export default function RoomManagement() {
                   name="image"
                   value={formData.image}
                   onChange={handleImageChange}
-                  placeholder="https://images.unsplash.com/photo-..."
+                  placeholder="/images/bd/hotels/hotel-sylhet.jpg"
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-900"
                 />
                 <p className="text-xs text-gray-500 mt-1">
-                  Paste image URL from Unsplash, Imgur, or any image hosting service
+                  Use a path from the HotelFlow Bangladesh gallery (/images/bd/…) or any image URL
                 </p>
                 
                 {imagePreview && (
@@ -317,11 +317,10 @@ export default function RoomManagement() {
                 )}
                 
                 <div className="mt-2 p-3 bg-blue-50 rounded-lg">
-                  <p className="text-xs font-medium text-blue-900 mb-1">💡 Where to get free images:</p>
+                  <p className="text-xs font-medium text-blue-900 mb-1">Where to get images:</p>
                   <ul className="text-xs text-blue-800 space-y-1">
-                    <li>• <a href="https://unsplash.com" target="_blank" className="underline">Unsplash.com</a> - Free high-quality images</li>
-                    <li>• <a href="https://imgur.com" target="_blank" className="underline">Imgur.com</a> - Free image hosting</li>
-                    <li>• Right-click image → Copy image address</li>
+                    <li>• Use the HotelFlow Bangladesh gallery in client/public/images/bd/</li>
+                    <li>• Or paste any image URL (Wikimedia Commons photos of Bangladesh work well)</li>
                   </ul>
                 </div>
               </div>

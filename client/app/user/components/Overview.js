@@ -276,7 +276,7 @@ export default function Overview({
               Rewards <ArrowRight className="h-4 w-4" />
             </button>
           </div>
-          <p className="mt-1 text-sm text-slate-500">Earn 1 pt per $10 of approved spend. Redeem from 100 pts.</p>
+          <p className="mt-1 text-sm text-slate-500">Earn 1 pt per ৳500 of approved spend. Redeem from 100 pts.</p>
         </section>
       )}
     </div>

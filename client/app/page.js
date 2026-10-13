@@ -1,586 +1,501 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import Image from "next/image";
-import { api } from "@/lib/api";
-import Navbar from "./components/Navbar";
-import { LoadingSpinner, LoadingCard } from "./components/Loading";
-import Carousel, { TestimonialsCarousel } from "./components/Carousel";
-import { getApiUrl } from "../lib/apiUrl";
+// ---------------------------------------------------------------------------
+// HotelFlow home page — Tripwise/Booking-style comparison layout:
+// sticky purple Navbar / hero + overlapping SearchBar / Popular Destinations /
+// two-column results (FilterSidebar + HotelCards with sort + pagination) /
+// Featured Hotels / Why Book With HotelFlow / Footer.
+// ---------------------------------------------------------------------------
 
-export default function Home() {
-  const [featuredRooms, setFeaturedRooms] = useState([]);
-  const [searchResults, setSearchResults] = useState([]);
-  const [reviews, setReviews] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [initialLoading, setInitialLoading] = useState(false);
-  const [isSticky, setIsSticky] = useState(false);
-  const [mounted, setMounted] = useState(false);
-  
-  const [filters, setFilters] = useState({
-    checkIn: "",
-    checkOut: "",
-    type: "all",
-    minPrice: "",
-    maxPrice: ""
+import { useEffect, useMemo, useState } from "react";
+import {
+  X,
+  Info,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  SlidersHorizontal,
+  SearchX,
+  BadgeDollarSign,
+  ShieldCheck,
+  Lock,
+  Headset,
+  MapPin,
+  Star,
+} from "lucide-react";
+import Navbar from "./components/hotelflow/Navbar";
+import SearchBar from "./components/hotelflow/SearchBar";
+import FilterSidebar, {
+  DEFAULT_FILTERS,
+} from "./components/hotelflow/FilterSidebar";
+import HotelCard, {
+  HotelCardSkeleton,
+} from "./components/hotelflow/HotelCard";
+import Footer from "./components/hotelflow/Footer";
+import {
+  HOTELS,
+  DESTINATIONS,
+  SORT_OPTIONS,
+  BRAND,
+  PAGE_BG,
+} from "./components/hotelflow/data";
+import { HERO_IMAGES, DESTINATION_IMAGES } from "./components/hotelflow/images";
+import SafeImage from "./components/hotelflow/SafeImage";
+
+const PAGE_SIZE = 5;
+
+const INITIAL_SEARCH = {
+  currency: "BDT",
+  mode: "Standard",
+  destination: "Cox's Bazar, Chattogram Division, Bangladesh",
+  guests: "1 Room, 2 Adults",
+  checkIn: "",
+  checkOut: "",
+  roomType: "all",
+  minPrice: "",
+  maxPrice: "",
+};
+
+// Guest stories from Bangladeshi travelers (static showcase).
+const TESTIMONIALS = [
+  {
+    name: "Rahim Uddin",
+    city: "Dhaka",
+    hotel: "Sea Pearl Beach Resort, Cox's Bazar",
+    rating: 5,
+    text: "Booked in two minutes with bKash and paid the rest at the hotel. The sea-view room was exactly as pictured.",
+  },
+  {
+    name: "Nusrat Jahan",
+    city: "Chattogram",
+    hotel: "Tea Garden Resort, Srimangal",
+    rating: 5,
+    text: "Free cancellation saved our trip when our launch got delayed. Rebooked for the next weekend with no charge.",
+  },
+  {
+    name: "Tanvir Ahmed",
+    city: "Sylhet",
+    hotel: "Hill View Resort, Sajek Valley",
+    rating: 4,
+    text: "Woke up above the clouds in Sajek. Support helped us arrange a Chander Gari over the phone at night.",
+  },
+];
+
+function applyFilters(hotels, search, filters) {
+  const dest = search.destination.trim().toLowerCase();
+  return hotels.filter((h) => {
+    // Destination match (city, state or country fragment)
+    if (dest && !h.location.toLowerCase().includes(dest.split(",")[0].trim()) &&
+        !dest.includes(h.destination) && !h.destination.includes(dest.split(" ")[0])) {
+      // Fall back to loose match: any word overlap
+      const words = dest.split(/[\s,]+/).filter((w) => w.length > 2);
+      const loc = h.location.toLowerCase();
+      if (words.length > 0 && !words.some((w) => loc.includes(w))) return false;
+    }
+    // Price from search panel (advanced) + sidebar budget
+    const minP = search.minPrice !== "" ? Number(search.minPrice) : -Infinity;
+    const maxP = search.maxPrice !== "" ? Number(search.maxPrice) : Infinity;
+    if (h.price < minP || h.price > maxP) return false;
+    if (filters.budgetEnabled && (h.price < filters.minBudget || h.price > filters.maxBudget))
+      return false;
+    if (search.roomType !== "all" && h.roomType !== search.roomType) return false;
+    if (filters.healthSafety && !h.healthSafety) return false;
+    if (filters.freeCancellation && !h.freeCancellation) return false;
+    if (filters.isHotel && !h.isHotel) return false;
+    if (filters.noPrepayment && !h.noPrepayment) return false;
+    if (filters.breakfast && !h.breakfastIncluded) return false;
+    if (filters.wifi && !h.wifi) return false;
+    if (filters.parking && !h.parking) return false;
+    if (filters.pool && !h.pool) return false;
+    if (filters.gym && !h.gym) return false;
+    if (filters.stars.length > 0 && !filters.stars.includes(h.starRating)) return false;
+    if (filters.guestRating !== "any" && h.rating < Number(filters.guestRating)) return false;
+    if (filters.roomTypes.length > 0 && !filters.roomTypes.includes(h.roomType)) return false;
+    return true;
   });
-
-  useEffect(() => {
-    setMounted(true);
-    const handleScroll = () => setIsSticky(window.scrollY > 450);
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
-  useEffect(() => {
-    // Only load rooms on client side after component is mounted
-    if (mounted && typeof window !== 'undefined') {
-      setInitialLoading(true);
-      loadFeaturedRooms();
-      loadApprovedReviews();
-    }
-  }, [mounted]);
-
-  const loadFeaturedRooms = async () => {
-    // Only run on client side
-    if (typeof window === 'undefined') {
-      setInitialLoading(false);
-      return;
-    }
-
-    try {
-      const apiUrl = getApiUrl('/api/rooms/featured');
-      console.log('[loadFeaturedRooms] Fetching from:', apiUrl);
-      console.log('[loadFeaturedRooms] NEXT_PUBLIC_API_URL:', process.env.NEXT_PUBLIC_API_URL);
-      
-      const response = await fetch(apiUrl, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        cache: 'no-store'
-      });
-      
-      console.log('[loadFeaturedRooms] Response status:', response.status, response.statusText);
-      
-      if (response.ok) {
-        const data = await response.json();
-        console.log("[loadFeaturedRooms] Featured rooms loaded:", data.data?.length);
-        setFeaturedRooms(data.data || []);
-      } else {
-        const errorText = await response.text();
-        console.error('[loadFeaturedRooms] Failed to fetch rooms:', response.status, response.statusText);
-        console.error('[loadFeaturedRooms] Error response:', errorText);
-        setFeaturedRooms([]);
-      }
-    } catch (error) { 
-      console.error('[loadFeaturedRooms] Network error:', error.message);
-      console.error('[loadFeaturedRooms] Full error:', error);
-      setFeaturedRooms([]);
-    } finally {
-      setInitialLoading(false);
-    }
-  };
-
-  const loadApprovedReviews = async () => {
-    try {
-      const response = await fetch(getApiUrl('/api/reviews/approved'), {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        cache: 'no-store'
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        console.log("Approved reviews loaded:", data.data?.length);
-        setReviews(data.data || []);
-      }
-    } catch (error) { 
-      console.error('Error loading reviews:', error);
-      setReviews([]);
-    }
-  };
-
-  const handleSearch = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    try {
-      const params = new URLSearchParams();
-      if (filters.type && filters.type !== 'all') params.append('type', filters.type);
-      if (filters.minPrice) params.append('minPrice', filters.minPrice);
-      if (filters.maxPrice) params.append('maxPrice', filters.maxPrice);
-      if (filters.checkIn) params.append('checkIn', filters.checkIn);
-      if (filters.checkOut) params.append('checkOut', filters.checkOut);
-      
-      const response = await fetch(getApiUrl(`/api/rooms?${params}`), {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        cache: 'no-store'
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        setSearchResults(data.data || []);
-      } else {
-        setSearchResults([]);
-      }
-      document.getElementById('results')?.scrollIntoView({ behavior: 'smooth' });
-    } catch (error) { 
-      console.error('Search Error:', error);
-      setSearchResults([]);
-    } finally { 
-      setLoading(false); 
-    }
-  };
-
-  return (
-    <div className="w-full min-h-screen bg-white text-slate-900 overflow-x-clip flex flex-col" suppressHydrationWarning>
-      <Navbar />
-      
-      {/* HERO CAROUSEL SECTION */}
-      <section className="relative w-full h-[40vh] sm:h-[50vh] md:h-[85vh] mt-16 overflow-hidden bg-slate-900" suppressHydrationWarning>
-        {mounted ? (
-          <Carousel
-            images={[
-              {
-                src: "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?auto=format&fit=crop&q=80&w=1600",
-                alt: "Luxury Hotel Lobby",
-                caption: "Welcome to HotelFlow",
-                description: "Experience luxury and comfort in our premium rooms"
-              },
-              {
-                src: "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&q=80&w=1600",
-                alt: "Modern Hotel Interior",
-                caption: "Elegance Redefined",
-                description: "Where sophistication meets modern comfort"
-              },
-              {
-                src: "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&q=80&w=1600",
-                alt: "Hotel Pool View",
-                caption: "Unwind in Paradise",
-                description: "Relax by our stunning infinity pool"
-              }
-            ]}
-            interval={6000}
-          />
-        ) : (
-          // Placeholder for SSR
-          <div className="absolute inset-0">
-            <Image 
-              src="https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?auto=format&fit=crop&q=80&w=1600"
-              alt="Luxury Hotel Lobby"
-              fill
-              className="object-cover"
-              priority
-            />
-          </div>
-        )}
-        
-        {/* Hero Content Overlay */}
-        <div className="absolute inset-0 flex items-center justify-center z-20 bg-black/20">
-          <div className="text-center px-4">
-            <h1 className="text-2xl xs:text-3xl sm:text-5xl md:text-8xl font-black text-white mb-3 xs:mb-4 sm:mb-6 tracking-tighter drop-shadow-2xl">
-              HOTEL<span className="text-blue-400">FLOW</span>
-            </h1>
-            <p className="text-xs xs:text-sm sm:text-lg md:text-2xl text-white mb-4 xs:mb-6 sm:mb-10 max-w-2xl mx-auto font-medium drop-shadow-lg">
-              Seamless booking for the modern traveler. 
-              Experience luxury without the complexity.
-            </p>
-            <button 
-              onClick={() => document.getElementById('search-bar')?.scrollIntoView({ behavior: 'smooth' })}
-              className="bg-white hover:bg-blue-600 hover:text-white text-slate-900 px-6 xs:px-8 sm:px-12 py-2.5 xs:py-3 sm:py-5 rounded-2xl text-sm xs:text-base sm:text-lg font-bold transition-all transform hover:scale-105 shadow-2xl"
-            >
-              Find Your Suite
-            </button>
-          </div>
-        </div>
-      </section>
-
-      {/* SEARCH BAR - Professional Design */}
-      <div 
-        id="search-bar"
-        suppressHydrationWarning
-        className={`${
-          mounted && isSticky 
-          ? 'fixed top-20 left-0 right-0 z-40 shadow-lg' 
-          : 'relative sm:-mt-20'
-        } bg-white transition-all duration-300 w-full`}
-      >
-        <div className="w-full max-w-full mx-auto px-2 sm:px-4 py-4 sm:py-6">
-          <form onSubmit={handleSearch} className="bg-white rounded-2xl shadow-xl border border-gray-100 p-3 sm:p-6">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-2 sm:gap-4">
-              {/* Check In */}
-              <div className="flex flex-col">
-                <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-2">
-                  Check In
-                </label>
-                <input
-                  type="date"
-                  name="checkIn"
-                  value={filters.checkIn}
-                  onChange={(e) => setFilters({...filters, checkIn: e.target.value})}
-                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 font-medium focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
-                />
-              </div>
-
-              {/* Check Out */}
-              <div className="flex flex-col">
-                <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-2">
-                  Check Out
-                </label>
-                <input
-                  type="date"
-                  name="checkOut"
-                  value={filters.checkOut}
-                  onChange={(e) => setFilters({...filters, checkOut: e.target.value})}
-                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 font-medium focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
-                />
-              </div>
-              
-              {/* Room Type */}
-              <div className="flex flex-col">
-                <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-2">
-                  Room Type
-                </label>
-                <select
-                  name="type"
-                  value={filters.type}
-                  onChange={(e) => setFilters({...filters, type: e.target.value})}
-                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 font-medium focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all appearance-none cursor-pointer"
-                  style={{
-                    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236B7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
-                    backgroundRepeat: 'no-repeat',
-                    backgroundPosition: 'right 0.75rem center',
-                    backgroundSize: '1.25rem'
-                  }}
-                >
-                  <option value="all">All Types</option>
-                  <option value="Deluxe">Deluxe</option>
-                  <option value="Suite">Suite</option>
-                </select>
-              </div>
-
-              {/* Min Price */}
-              <div className="flex flex-col">
-                <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-2">
-                  Min Price
-                </label>
-                <input
-                  type="number"
-                  name="minPrice"
-                  value={filters.minPrice}
-                  onChange={(e) => setFilters({...filters, minPrice: e.target.value})}
-                  placeholder="$0"
-                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 font-medium focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all placeholder:text-gray-400"
-                />
-              </div>
-
-              {/* Max Price */}
-              <div className="flex flex-col">
-                <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-2">
-                  Max Price
-                </label>
-                <input
-                  type="number"
-                  name="maxPrice"
-                  value={filters.maxPrice}
-                  onChange={(e) => setFilters({...filters, maxPrice: e.target.value})}
-                  placeholder="$1000"
-                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 font-medium focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all placeholder:text-gray-400"
-                />
-              </div>
-              
-              {/* Search Button */}
-              <div className="flex items-end">
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-all shadow-md hover:shadow-lg active:scale-95 disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center"
-                >
-                  {loading ? <LoadingSpinner size="sm" /> : "SEARCH"}
-                </button>
-              </div>
-            </div>
-          </form>
-        </div>
-      </div>
-
-      {/* DYNAMIC CONTENT AREA */}
-      <section id="results" className="w-full max-w-full px-2 sm:px-4 py-4 sm:py-8" suppressHydrationWarning>
-        <div className="flex flex-col md:flex-row md:items-end justify-between mb-4 sm:mb-8 gap-1 sm:gap-4">
-          <div className="w-full">
-            <h2 className="text-lg xs:text-xl sm:text-3xl md:text-5xl font-black text-slate-900 tracking-tighter uppercase">
-              {searchResults.length > 0 ? "Your Search" : "Featured Stays"}
-            </h2>
-            <p className="text-slate-500 font-medium text-xs xs:text-sm mt-0.5 sm:mt-2">Handpicked selection of premium accommodation.</p>
-          </div>
-          <div className="h-[2px] flex-grow mx-2 sm:mx-8 bg-slate-100 hidden lg:block mb-2 sm:mb-4" />
-        </div>
-
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3" suppressHydrationWarning>
-          {mounted && initialLoading ? (
-            // Show loading cards while fetching data
-            <>
-              <LoadingCard />
-              <LoadingCard />
-              <LoadingCard />
-            </>
-          ) : (
-            <>
-              {(searchResults.length > 0 ? searchResults : featuredRooms).map((room) => (
-                <RoomCard key={room._id} room={room} />
-              ))}
-              
-              {/* Fallback if no rooms available */}
-              {!initialLoading && searchResults.length === 0 && featuredRooms.length === 0 && (
-                 <div className="col-span-full text-center py-20">
-                   <div className="text-6xl mb-4">🏨</div>
-                   <h3 className="text-2xl font-bold text-gray-800 mb-2">No Rooms Available</h3>
-                   <p className="text-gray-600">Check back soon for our latest offerings!</p>
-                 </div>
-              )}
-            </>
-          )}
-        </div>
-      </section>
-
-      {/* CAROUSEL 1: Hotel Highlights */}
-      <section className="w-full bg-gradient-to-br from-slate-50 to-blue-50 py-6 sm:py-16" suppressHydrationWarning>
-        <div className="w-full max-w-full px-2 sm:px-4 mx-auto">
-          <div className="text-center mb-6 sm:mb-12">
-            <h2 className="text-xl xs:text-2xl sm:text-3xl md:text-5xl font-black text-slate-900 tracking-tighter uppercase mb-2 sm:mb-4">
-              Experience Luxury
-            </h2>
-            <p className="text-slate-600 font-medium">Discover our world-class facilities and amenities</p>
-          </div>
-          <div className="w-full max-w-full mx-auto h-[180px] xs:h-[240px] sm:h-[320px] md:h-[500px]">
-            {mounted && (
-              <Carousel
-                images={[
-                  {
-                    src: "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&q=80&w=1600",
-                    alt: "Luxury Hotel Lobby",
-                    caption: "Grand Lobby",
-                    description: "Welcome to elegance and sophistication"
-                  },
-                  {
-                    src: "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&q=80&w=1600",
-                    alt: "Infinity Pool",
-                    caption: "Infinity Pool",
-                    description: "Relax with breathtaking city views"
-                  },
-                  {
-                    src: "https://images.unsplash.com/photo-1571896349842-33c89424de2d?auto=format&fit=crop&q=80&w=1600",
-                    alt: "Fine Dining",
-                    caption: "Fine Dining",
-                    description: "Michelin-starred culinary experiences"
-                  },
-                  {
-                    src: "https://images.unsplash.com/photo-1540541338287-41700207dee6?auto=format&fit=crop&q=80&w=1600",
-                    alt: "Spa & Wellness",
-                    caption: "Spa & Wellness",
-                    description: "Rejuvenate your mind and body"
-                  }
-                ]}
-              />
-            )}
-          </div>
-        </div>
-      </section>
-
-      {/* CAROUSEL 2: Room Types Showcase */}
-      <section className="w-full py-10 sm:py-20" suppressHydrationWarning>
-        <div className="w-full max-w-full px-2 sm:px-4 mx-auto">
-          <div className="text-center mb-8 sm:mb-12">
-            <h2 className="text-2xl xs:text-3xl sm:text-4xl md:text-5xl font-black text-slate-900 tracking-tighter uppercase mb-2 sm:mb-4">
-              Our Suites
-            </h2>
-            <p className="text-slate-600 font-medium">From deluxe rooms to presidential suites</p>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-8 w-full">
-            <div className="h-[200px] xs:h-[250px] sm:h-[300px] md:h-[400px]">
-              {mounted && (
-                <Carousel
-                  images={[
-                    {
-                      src: "https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&q=80&w=1600",
-                      alt: "Deluxe Room",
-                      caption: "Deluxe Room",
-                      description: "Modern comfort with city views"
-                    },
-                    {
-                      src: "https://images.unsplash.com/photo-1578683010236-d716f9a3f461?auto=format&fit=crop&q=80&w=1600",
-                      alt: "Executive Suite",
-                      caption: "Executive Suite",
-                      description: "Perfect for business travelers"
-                    },
-                    {
-                      src: "https://images.unsplash.com/photo-1591088398332-8a7791972843?auto=format&fit=crop&q=80&w=1600",
-                      alt: "Family Suite",
-                      caption: "Family Suite",
-                      description: "Spacious rooms for the whole family"
-                    }
-                  ]}
-                  interval={4000}
-                />
-              )}
-            </div>
-            <div className="h-[200px] xs:h-[250px] sm:h-[300px] md:h-[400px]">
-              {mounted && (
-                <Carousel
-                  images={[
-                    {
-                      src: "https://images.unsplash.com/photo-1582719508461-905c673771fd?auto=format&fit=crop&q=80&w=1600",
-                      alt: "Presidential Suite",
-                      caption: "Presidential Suite",
-                      description: "Ultimate luxury and privacy"
-                    },
-                    {
-                      src: "https://images.unsplash.com/photo-1631049307264-da0ec9d70304?auto=format&fit=crop&q=80&w=1600",
-                      alt: "Honeymoon Suite",
-                      caption: "Honeymoon Suite",
-                      description: "Romance and elegance combined"
-                    },
-                    {
-                      src: "https://images.unsplash.com/photo-1616594039964-ae9021a400a0?auto=format&fit=crop&q=80&w=1600",
-                      alt: "Penthouse",
-                      caption: "Penthouse",
-                      description: "Panoramic views from the top floor"
-                    }
-                  ]}
-                  interval={4500}
-                />
-              )}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* CAROUSEL 3: Guest Reviews */}
-      <section className="w-full bg-gradient-to-br from-blue-50 to-indigo-50 py-6 sm:py-16" suppressHydrationWarning>
-        <div className="w-full max-w-full px-2 sm:px-4 mx-auto">
-          <div className="text-center mb-6 sm:mb-16">
-            <h2 className="text-xl xs:text-2xl sm:text-3xl md:text-5xl font-black text-slate-900 tracking-tighter uppercase mb-2 sm:mb-4">
-              Guest Reviews
-            </h2>
-            <p className="text-slate-600 font-medium">What our guests say about their experience</p>
-          </div>
-          
-          {reviews.length > 0 ? (
-            <div className="w-full max-w-full mx-auto grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {reviews.slice(0, 6).map((review) => (
-                <div key={review._id} className="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-shadow">
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
-                      {review.user?.avatar ? (
-                        <img 
-                          src={review.user.avatar} 
-                          alt={review.user.name}
-                          className="w-full h-full rounded-full object-cover"
-                        />
-                      ) : (
-                        <span className="text-blue-600 text-xl font-bold">
-                          {review.user?.name?.charAt(0).toUpperCase() || '?'}
-                        </span>
-                      )}
-                    </div>
-                    <div className="flex-1">
-                      <h4 className="font-bold text-gray-900">{review.user?.name || 'Guest'}</h4>
-                      <p className="text-sm text-gray-500">{review.room?.name}</p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center gap-1 mb-3">
-                    {[...Array(5)].map((_, i) => (
-                      <span key={i} className={`text-lg ${i < review.rating ? 'text-yellow-400' : 'text-gray-300'}`}>
-                        ⭐
-                      </span>
-                    ))}
-                  </div>
-                  
-                  <p className="text-gray-700 text-sm leading-relaxed line-clamp-4">
-                    {review.comment}
-                  </p>
-                  
-                  <p className="text-xs text-gray-400 mt-3">
-                    {new Date(review.createdAt).toLocaleDateString()}
-                  </p>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="max-w-3xl mx-auto h-[280px] relative flex items-center justify-center">
-              <div className="text-center">
-                <div className="text-6xl mb-4">⭐</div>
-                <p className="text-gray-600 font-medium">No reviews yet. Be the first to share your experience!</p>
-              </div>
-            </div>
-          )}
-        </div>
-      </section>
-    </div>
-  );
 }
 
-function RoomCard({ room }) {
-  // Use img tag for local uploads, Next Image for external URLs
-  const isCloudinaryImage = room.image && room.image.includes('cloudinary.com');
-  const isLocalImage = room.image && (room.image.includes('localhost') || room.image.includes('127.0.0.1'));
-  const shouldUseImgTag = isLocalImage;
-  
+function sortHotels(hotels, sort) {
+  const list = [...hotels];
+  if (sort === "price-asc") list.sort((a, b) => a.price - b.price);
+  else if (sort === "price-desc") list.sort((a, b) => b.price - a.price);
+  else if (sort === "rating-desc") list.sort((a, b) => b.rating - a.rating);
+  return list;
+}
+
+export default function Home() {
+  const [search, setSearch] = useState(INITIAL_SEARCH);
+  const [filters, setFilters] = useState(DEFAULT_FILTERS);
+  const [sort, setSort] = useState("recommended");
+  const [loading, setLoading] = useState(false);
+  const [bannerVisible, setBannerVisible] = useState(true);
+  const [favorites, setFavorites] = useState(new Set(["h2"]));
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const [mobileFilters, setMobileFilters] = useState(false);
+
+  // Hero slider: 3 Bangladesh scenes, auto-play every 5s.
+  const [heroSlide, setHeroSlide] = useState(0);
+  const nextSlide = () => setHeroSlide((i) => (i + 1) % HERO_IMAGES.length);
+  const prevSlide = () => setHeroSlide((i) => (i - 1 + HERO_IMAGES.length) % HERO_IMAGES.length);
+  useEffect(() => {
+    const t = setInterval(nextSlide, 5000);
+    return () => clearInterval(t);
+  }, []);
+
+  const toggleFavorite = (id) =>
+    setFavorites((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+
+  // Simulate fetch so skeletons are visible on every search.
+  const handleSearch = () => {
+    setLoading(true);
+    setVisibleCount(PAGE_SIZE);
+    setTimeout(() => setLoading(false), 650);
+    document.getElementById("results")?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  const filtered = useMemo(
+    () => sortHotels(applyFilters(HOTELS, search, filters), sort),
+    [search, filters, sort]
+  );
+  const visible = filtered.slice(0, visibleCount);
+  const featured = useMemo(() => sortHotels(HOTELS, "rating-desc").slice(0, 3), []);
+
+  const sidebar = (
+    <FilterSidebar filters={filters} onChange={(f) => { setFilters(f); setVisibleCount(PAGE_SIZE); }} totalCount={filtered.length} />
+  );
+
   return (
-    <div className="group bg-white rounded-2xl sm:rounded-[2.5rem] shadow-sm hover:shadow-2xl transition-all duration-500 overflow-hidden border border-slate-100">
-      <div className="relative h-40 xs:h-48 sm:h-56 md:h-72 overflow-hidden">
-        {shouldUseImgTag && room.image ? (
-          <img 
-            src={room.image} 
-            alt={room.name}
-            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-          />
-        ) : (
-          <Image 
-            src={room.image || "https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&q=80&w=800"} 
-            alt={room.name}
-            fill
-            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-            className="object-cover group-hover:scale-110 transition-transform duration-700"
-          />
-        )}
-        <div className="absolute top-6 left-6 bg-white/90 backdrop-blur-md px-4 py-1.5 rounded-2xl font-black text-slate-900 text-xs shadow-sm uppercase tracking-wider">
-          {room.type}
+    <div className="min-h-screen font-sans text-slate-900" style={{ backgroundColor: PAGE_BG }}>
+      <Navbar />
+
+      {/* ================= HERO SLIDER (Bangladesh scenes, 5s autoplay) ================= */}
+      <section className="relative overflow-hidden bg-slate-900" aria-roledescription="carousel" aria-label="Bangladesh destinations">
+        {HERO_IMAGES.map((img, i) => (
+          <div
+            key={img.src}
+            aria-hidden={i !== heroSlide}
+            className={`absolute inset-0 transition-opacity duration-1000 ${i === heroSlide ? "opacity-100" : "opacity-0"}`}
+          >
+            <SafeImage
+              src={img.src}
+              alt={img.alt}
+              fill
+              priority={i === 0}
+              sizes="100vw"
+              className="h-full w-full object-cover"
+            />
+          </div>
+        ))}
+        <div className="absolute inset-0 bg-gradient-to-b from-[#2b2d6e]/70 via-[#2b2d6e]/55 to-black/60" />
+        {/* Arrows */}
+        <button
+          type="button"
+          onClick={prevSlide}
+          aria-label="Previous slide"
+          className="absolute left-3 top-1/2 z-20 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-full bg-black/35 text-white transition hover:bg-black/55"
+        >
+          <ChevronLeft className="h-5 w-5" />
+        </button>
+        <button
+          type="button"
+          onClick={nextSlide}
+          aria-label="Next slide"
+          className="absolute right-3 top-1/2 z-20 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-full bg-black/35 text-white transition hover:bg-black/55"
+        >
+          <ChevronRight className="h-5 w-5" />
+        </button>
+        <div className="relative mx-auto max-w-[1280px] px-4 pb-28 pt-14 text-center sm:px-6 sm:pb-32 sm:pt-20">
+          <h1 className="text-3xl font-black tracking-tight text-white drop-shadow-lg sm:text-5xl md:text-6xl">
+            Find Your Perfect Stay in Bangladesh
+          </h1>
+          <p className="mx-auto mt-3 max-w-2xl text-sm font-medium text-white/90 sm:text-lg">
+            Book hotels, resorts and rooms across Bangladesh, from
+            Cox&apos;s Bazar beaches to Sylhet tea gardens.
+          </p>
+          {/* Dots */}
+          <div className="mt-6 flex items-center justify-center gap-2">
+            {HERO_IMAGES.map((img, i) => (
+              <button
+                key={img.src}
+                type="button"
+                onClick={() => setHeroSlide(i)}
+                aria-label={`Go to slide ${i + 1}: ${img.alt}`}
+                className={`h-2 rounded-full transition-all ${
+                  i === heroSlide ? "w-6 bg-white" : "w-2 bg-white/50 hover:bg-white/80"
+                }`}
+              />
+            ))}
+          </div>
         </div>
+      </section>
+
+      {/* Search panel overlapping hero */}
+      <div className="relative z-20 mx-auto -mt-20 max-w-[1280px] px-4 sm:-mt-24 sm:px-6">
+        <SearchBar value={search} onChange={setSearch} onSearch={handleSearch} loading={loading} />
       </div>
 
-      <div className="p-3 xs:p-4 sm:p-8">
-        <div className="flex justify-between items-start mb-2 xs:mb-3 sm:mb-4">
-          <h3 className="text-base xs:text-lg sm:text-2xl font-black text-slate-900 leading-tight">
-            {room.name}
-          </h3>
-        </div>
-        
-        <p className="text-slate-500 text-xs xs:text-sm line-clamp-2 mb-3 xs:mb-4 sm:mb-8 font-medium">
-          {room.description || "Indulge in a space where modern design meets absolute comfort."}
-        </p>
-        
-        <div className="flex items-center justify-between pt-2 xs:pt-3 sm:pt-6 border-t border-slate-50">
+      {/* ================= POPULAR DESTINATIONS ================= */}
+      <section className="mx-auto max-w-[1280px] px-4 pt-10 sm:px-6">
+        <div className="flex items-end justify-between">
           <div>
-            <p className="text-[8px] xs:text-[9px] sm:text-[10px] text-slate-400 font-black uppercase tracking-widest">Rate</p>
-            <p className="text-xl xs:text-2xl sm:text-3xl font-black text-slate-900 tracking-tighter">
-              ${room.price}<span className="text-xs xs:text-sm font-bold text-slate-400">/nt</span>
+            <h2 className="text-xl font-extrabold tracking-tight text-[#1B1D2A] sm:text-2xl">
+              Popular Destinations
+            </h2>
+            <p className="mt-1 text-[13px] text-[#6B7089]">
+              Trending places travelers love right now.
             </p>
           </div>
-          <a 
-            href={`/rooms/${room._id}`}
-            className="bg-slate-900 text-white px-3 xs:px-5 sm:px-7 py-2 xs:py-3 sm:py-4 rounded-lg sm:rounded-2xl font-black text-xs xs:text-sm sm:text-base hover:bg-blue-600 transition-all active:scale-95 shadow-lg shadow-slate-200"
-          >
-            BOOK NOW
-          </a>
         </div>
-      </div>
+        <div className="mt-4 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+          {DESTINATIONS.map((d) => (
+            <button
+              key={d.name}
+              type="button"
+              onClick={() => {
+                setSearch((s) => ({ ...s, destination: `${d.name}, ${d.country}` }));
+                handleSearch();
+              }}
+              className="group relative h-40 overflow-hidden rounded-2xl text-left shadow-[0_2px_12px_rgba(18,24,60,0.10)] sm:h-52"
+            >
+              <SafeImage
+                src={d.image}
+                alt={DESTINATION_IMAGES[d.name]?.alt || `${d.name}, Bangladesh`}
+                fill
+                sizes="(max-width: 1024px) 50vw, 25vw"
+                className="h-full w-full object-cover transition duration-500 group-hover:scale-110"
+              />
+              <span className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
+              <span className="absolute bottom-3 left-3 right-3">
+                <span className="block text-[15px] font-extrabold text-white">{d.name}</span>
+                <span className="mt-0.5 flex items-center gap-1 text-[12px] font-medium text-white/80">
+                  <MapPin className="h-3.5 w-3.5" />
+                  {d.properties.toLocaleString()} properties
+                </span>
+              </span>
+            </button>
+          ))}
+        </div>
+      </section>
+
+      {/* ================= RESULTS (two columns) ================= */}
+      <main
+        id="results"
+        className="mx-auto grid max-w-[1280px] scroll-mt-20 grid-cols-1 gap-5 px-4 pt-10 sm:px-6 lg:grid-cols-[280px_minmax(0,1fr)]"
+      >
+        {/* Sidebar desktop */}
+        <aside className="hidden lg:block">
+          <div className="sticky top-20">{sidebar}</div>
+        </aside>
+
+        {/* Sidebar mobile */}
+        <div className="lg:hidden">
+          <button
+            type="button"
+            onClick={() => setMobileFilters(!mobileFilters)}
+            className="flex w-full items-center justify-between rounded-2xl border border-[#E3E6EF] bg-white px-4 py-3 text-sm font-bold text-[#1B1D2A] shadow-sm"
+          >
+            <span className="flex items-center gap-2">
+              <SlidersHorizontal className="h-4 w-4" style={{ color: BRAND }} />
+              Filter your results ({filtered.length})
+            </span>
+            <ChevronDown className={`h-4 w-4 text-slate-400 transition-transform ${mobileFilters ? "rotate-180" : ""}`} />
+          </button>
+          {mobileFilters && <div className="mt-3">{sidebar}</div>}
+        </div>
+
+        {/* Right content */}
+        <section className="min-w-0">
+          {bannerVisible && (
+            <div className="mb-4 flex items-start gap-2.5 rounded-xl border border-[#E3E6EF] bg-[#EEF0F5] px-4 py-3 text-[13px] shadow-sm">
+              <Info className="mt-0.5 h-4 w-4 shrink-0 text-[#5A5F79]" />
+              <p className="flex-1 font-medium leading-snug text-[#3D4159]">
+                Based on your filters, we&apos;re showing available properties only.
+              </p>
+              <button
+                type="button"
+                aria-label="Dismiss notice"
+                onClick={() => setBannerVisible(false)}
+                className="rounded p-0.5 text-[#5A5F79] transition hover:bg-black/5"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          )}
+
+          {/* Sort row */}
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+            <p className="text-[13px] text-[#6B7089]">
+              <span className="font-extrabold text-[#1B1D2A]">{filtered.length} properties</span> found
+              {search.destination ? ` • ${search.destination}` : ""}
+            </p>
+            <label className="flex items-center gap-2 rounded-xl border border-[#E3E6EF] bg-white px-3 py-2 text-[12.5px] font-semibold shadow-sm">
+              <span className="text-[#9AA0B4]">Sort by:</span>
+              <select
+                value={sort}
+                onChange={(e) => setSort(e.target.value)}
+                className="cursor-pointer bg-transparent font-bold text-[#1B1D2A] outline-none"
+              >
+                {SORT_OPTIONS.map((o) => (
+                  <option key={o.value} value={o.value}>{o.label}</option>
+                ))}
+              </select>
+            </label>
+          </div>
+
+          {/* Cards */}
+          <div className="space-y-4">
+            {loading ? (
+              <>
+                <HotelCardSkeleton />
+                <HotelCardSkeleton />
+                <HotelCardSkeleton />
+              </>
+            ) : visible.length > 0 ? (
+              visible.map((hotel) => (
+                <HotelCard
+                  key={hotel.id}
+                  hotel={hotel}
+                  isFavorite={favorites.has(hotel.id)}
+                  onToggleFavorite={toggleFavorite}
+                />
+              ))
+            ) : (
+              <div className="rounded-2xl border border-[#E3E6EF] bg-white p-12 text-center shadow-sm">
+                <span className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-[#F1F2F7]">
+                  <SearchX className="h-6 w-6 text-[#9AA0B4]" />
+                </span>
+                <h3 className="mt-4 font-extrabold text-[#1B1D2A]">No properties found. Try changing your filters.</h3>
+                <p className="mt-1 text-[13px] text-[#6B7089]">
+                  Try widening your budget or removing some filters.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => { setFilters(DEFAULT_FILTERS); setSearch(INITIAL_SEARCH); }}
+                  className="mt-4 rounded-xl px-5 py-2.5 text-[13px] font-bold text-white"
+                  style={{ backgroundColor: BRAND }}
+                >
+                  Reset all filters
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Pagination / Load more */}
+          {!loading && visibleCount < filtered.length && (
+            <div className="mt-6 text-center">
+              <button
+                type="button"
+                onClick={() => setVisibleCount((c) => c + PAGE_SIZE)}
+                className="rounded-xl border-2 px-8 py-3 text-sm font-bold transition hover:bg-[#5B5BE6] hover:text-white active:scale-95"
+                style={{ borderColor: BRAND, color: BRAND }}
+                onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = BRAND; e.currentTarget.style.color = "#fff"; }}
+                onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "transparent"; e.currentTarget.style.color = BRAND; }}
+              >
+                Load more properties ({filtered.length - visibleCount} remaining)
+              </button>
+            </div>
+          )}
+        </section>
+      </main>
+
+      {/* ================= FEATURED HOTELS ================= */}
+      <section className="mx-auto max-w-[1280px] px-4 pt-12 sm:px-6">
+        <h2 className="text-xl font-extrabold tracking-tight text-[#1B1D2A] sm:text-2xl">
+          Featured Hotels
+        </h2>
+        <p className="mt-1 text-[13px] text-[#6B7089]">
+          Top-rated stays picked by our travel experts.
+        </p>
+        <div className="mt-4 space-y-4">
+          {featured.map((hotel) => (
+            <HotelCard
+              key={hotel.id}
+              hotel={hotel}
+              isFavorite={favorites.has(hotel.id)}
+              onToggleFavorite={toggleFavorite}
+            />
+          ))}
+        </div>
+      </section>
+
+      {/* ================= GUEST STORIES ================= */}
+      <section className="mx-auto max-w-[1280px] px-4 pt-12 sm:px-6">
+        <h2 className="text-xl font-extrabold tracking-tight text-[#1B1D2A] sm:text-2xl">
+          Guest Stories
+        </h2>
+        <p className="mt-1 text-[13px] text-[#6B7089]">
+          What travelers across Bangladesh say about HotelFlow.
+        </p>
+        <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-3">
+          {TESTIMONIALS.map((t) => (
+            <div
+              key={t.name}
+              className="rounded-2xl border border-[#E3E6EF] bg-white p-6 shadow-[0_2px_12px_rgba(18,24,60,0.06)] transition hover:-translate-y-1 hover:shadow-[0_16px_40px_rgba(45,50,140,0.16)]"
+            >
+              <div className="flex items-center gap-1">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <Star
+                    key={i}
+                    className={`h-4 w-4 ${i < t.rating ? "fill-amber-400 text-amber-400" : "text-[#CBD2DC]"}`}
+                  />
+                ))}
+              </div>
+              <p className="mt-3 text-[13.5px] leading-relaxed text-[#3D4159]">
+                &ldquo;{t.text}&rdquo;
+              </p>
+              <div className="mt-4 flex items-center gap-3 border-t border-[#EEF0F5] pt-4">
+                <span
+                  className="grid h-10 w-10 shrink-0 place-items-center rounded-full text-sm font-black text-white"
+                  style={{ backgroundColor: BRAND }}
+                >
+                  {t.name.charAt(0)}
+                </span>
+                <div>
+                  <p className="text-[13.5px] font-extrabold text-[#1B1D2A]">{t.name}</p>
+                  <p className="text-[12px] text-[#6B7089]">
+                    {t.city} • stayed at {t.hotel}
+                  </p>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ================= WHY BOOK ================= */}
+      <section className="mx-auto max-w-[1280px] px-4 pt-12 sm:px-6">
+        <div className="rounded-2xl bg-white p-6 shadow-[0_2px_12px_rgba(18,24,60,0.06)] sm:p-10">
+          <h2 className="text-center text-xl font-extrabold tracking-tight text-[#1B1D2A] sm:text-2xl">
+            Why Book With HotelFlow
+          </h2>
+          <div className="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            {[
+              { icon: BadgeDollarSign, title: "Best price in Taka", text: "Transparent BDT prices with 15% VAT included. Find it cheaper within 24 hours and we refund the difference." },
+              { icon: ShieldCheck, title: "Free cancellation", text: "Most stays let you cancel free of charge up to 24 hours before check-in." },
+              { icon: Lock, title: "Pay your way", text: "Pay at hotel, or use bKash, Nagad, Rocket, Visa/Mastercard. No prepayment needed on most rooms." },
+              { icon: Headset, title: "24/7 human support", text: "Real travel experts on call day and night, wherever you are." },
+            ].map(({ icon: Icon, title, text }) => (
+              <div key={title} className="text-center">
+                <span className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-[#5B5BE6]/10">
+                  <Icon className="h-6 w-6" style={{ color: BRAND }} />
+                </span>
+                <h3 className="mt-3 text-[15px] font-extrabold text-[#1B1D2A]">{title}</h3>
+                <p className="mt-1 text-[13px] leading-relaxed text-[#6B7089]">{text}</p>
+              </div>
+            ))}
+          <p className="mt-8 border-t border-[#EEF0F5] pt-5 text-center text-[12.5px] font-semibold text-[#6B7089]">
+            We accept bKash • Nagad • Rocket • Visa/Mastercard • Cash at hotel
+          </p>
+          </div>
+        </div>
+      </section>
+
+      <Footer />
     </div>
   );
 }

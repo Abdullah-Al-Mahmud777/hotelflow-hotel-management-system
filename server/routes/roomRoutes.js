@@ -4,6 +4,7 @@ const {
   getRooms,
   getFeaturedRooms,
   getRoom,
+  getRoomAvailability,
   createRoom,
   updateRoom,
   deleteRoom
@@ -11,6 +12,7 @@ const {
 
 router.get('/', getRooms);
 router.get('/featured', getFeaturedRooms);
+router.get('/:id/availability', getRoomAvailability);
 router.get('/:id', getRoom);
 router.post('/', createRoom);
 router.put('/:id', updateRoom);

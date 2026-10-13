@@ -103,7 +103,7 @@ export default function UserBookings({ bookings = [], reviews = [], loading, onC
       );
     }
     switch (sort) {
-      case "checkin":
+      case "checking":
         list.sort((a, b) => new Date(a.checkIn) - new Date(b.checkIn));
         break;
       case "price-desc":

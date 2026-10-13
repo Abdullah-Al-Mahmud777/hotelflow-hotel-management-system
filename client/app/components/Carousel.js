@@ -8,6 +8,8 @@ export default function Carousel({ images, autoPlay = true, interval = 5000 }) {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    // Mount gate for client-only carousel timers (intentional setState).
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMounted(true);
   }, []);
 
@@ -106,23 +108,23 @@ export default function Carousel({ images, autoPlay = true, interval = 5000 }) {
 export function TestimonialsCarousel() {
   const testimonials = [
     {
-      name: "popu",
+      name: "Rahim Uddin",
       role: "Business Traveler",
-      image: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=200",
+      image: "/images/bd/destinations/dest-coxsbazar.jpg",
       text: "Exceptional service and stunning rooms. HotelFlow made my business trip feel like a luxury vacation.",
       rating: 5
     },
     {
-      name: "moro",
+      name: "Nusrat Jahan",
       role: "Vacation Guest",
-      image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=200",
+      image: "/images/bd/destinations/dest-sajek-valley.jpg",
       text: "The booking process was seamless, and the staff went above and beyond. Highly recommend!",
       rating: 5
     },
     {
-      name: "mac ",
+      name: "Tanvir Ahmed",
       role: "Honeymoon Couple",
-      image: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&q=80&w=200",
+      image: "/images/bd/destinations/dest-saint-martin.jpg",
       text: "Our honeymoon suite was perfect. Every detail was thoughtfully arranged. Unforgettable experience!",
       rating: 5
     }
@@ -132,6 +134,8 @@ export function TestimonialsCarousel() {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    // Mount gate for client-only carousel timers (intentional setState).
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMounted(true);
   }, []);
 
@@ -163,7 +167,7 @@ export function TestimonialsCarousel() {
                   </svg>
                 ))}
               </div>
-              <p className="text-gray-700 text-lg mb-6 italic">"{testimonial.text}"</p>
+              <p className="text-gray-700 text-lg mb-6 italic">&ldquo;{testimonial.text}&rdquo;</p>
             </div>
             <div className="flex items-center gap-4">
               <div className="relative w-12 h-12 rounded-full overflow-hidden">

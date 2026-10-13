@@ -1,15 +1,20 @@
 const Room = require('../models/Room');
 const Booking = require('../models/Booking');
+const { bookedUnits } = require('./bookingController');
 
 // Get all rooms with filters
 exports.getRooms = async (req, res) => {
   try {
-    const { type, minPrice, maxPrice, checkIn, checkOut } = req.query;
-    
+    const { type, minPrice, maxPrice, checkIn, checkOut, hotel } = req.query;
+
     let query = {};
-    
+
     if (type && type !== 'all') {
       query.type = type;
+    }
+
+    if (hotel) {
+      query.hotel = hotel;
     }
     
     if (minPrice || maxPrice) {
@@ -20,19 +25,22 @@ exports.getRooms = async (req, res) => {
     
     let rooms = await Room.find(query).sort({ featured: -1, createdAt: -1 });
     
-    // Filter by availability if dates provided
+    // Inventory-aware availability: annotate every room with remaining
+    // units for the dates and drop fully-booked ones (same visible result
+    // as before for single-unit rooms, plus exact counts for inventory).
     if (checkIn && checkOut) {
-      const checkInDate = new Date(checkIn);
-      const checkOutDate = new Date(checkOut);
-      
-      const bookedRoomIds = await Booking.find({
-        status: { $ne: 'cancelled' },
-        $or: [
-          { checkIn: { $lte: checkOutDate }, checkOut: { $gte: checkInDate } }
-        ]
-      }).distinct('room');
-      
-      rooms = rooms.filter(room => !bookedRoomIds.some(id => id.equals(room._id)));
+      const annotated = await Promise.all(
+        rooms.map(async (room) => {
+          const total = room.totalRooms || 1;
+          const used = await bookedUnits(room._id, checkIn, checkOut);
+          const remaining = Math.max(0, total - used);
+          const obj = room.toObject();
+          obj.remainingRooms = remaining;
+          obj.availableForDates = room.availability !== false && remaining > 0;
+          return obj;
+        })
+      );
+      rooms = annotated.filter((room) => room.remainingRooms > 0);
     }
     
     res.json({
@@ -46,6 +54,34 @@ exports.getRooms = async (req, res) => {
       message: 'Error fetching rooms',
       error: error.message
     });
+  }
+};
+
+// Availability of one room for dates: { available, remaining, totalRooms }.
+exports.getRoomAvailability = async (req, res) => {
+  try {
+    const { checkIn, checkOut, rooms } = req.query;
+    if (!checkIn || !checkOut) {
+      return res.status(400).json({ success: false, message: 'checkIn and checkOut are required' });
+    }
+    const room = await Room.findById(req.params.id);
+    if (!room) {
+      return res.status(404).json({ success: false, message: 'Room not found' });
+    }
+    const total = room.totalRooms || 1;
+    const used = await bookedUnits(room._id, checkIn, checkOut);
+    const remaining = Math.max(0, total - used);
+    const need = Math.max(1, Number(rooms) || 1);
+    res.json({
+      success: true,
+      data: {
+        available: room.availability !== false && remaining >= need,
+        remainingRooms: remaining,
+        totalRooms: total,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Error checking availability', error: error.message });
   }
 };
 

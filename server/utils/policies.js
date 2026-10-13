@@ -76,17 +76,17 @@ function couponDiscount(coupon, subtotal) {
   return { ok: true, discount, total: Math.round((base - discount) * 100) / 100 };
 }
 
-// Loyalty: 1 point per $10 of approved spend.
+// Loyalty: 1 point per ৳500 of approved spend.
 function loyaltyEarned(amount) {
-  return Math.floor((Number(amount) || 0) / 10);
+  return Math.floor((Number(amount) || 0) / 500);
 }
 
-// Points → coupon value mapping for redemptions (100 pts = $5 off, min 100).
+// Points → coupon value mapping for redemptions (100 pts = ৳500 off, min 100).
 function redeemValue(points) {
   const p = Math.floor(Number(points) || 0);
   if (p < 100) return { ok: false, message: 'Minimum redemption is 100 points' };
   const units = Math.floor(p / 100);
-  return { ok: true, pointsUsed: units * 100, couponValue: units * 5 };
+  return { ok: true, pointsUsed: units * 100, couponValue: units * 500 };
 }
 
 module.exports = {

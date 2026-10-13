@@ -68,6 +68,7 @@ mongoose
 
 // Routes
 const roomRoutes = require('./routes/roomRoutes');
+const hotelRoutes = require('./routes/hotelRoutes');
 const bookingRoutes = require('./routes/bookingRoutes');
 const uploadRoutes = require('./routes/uploadRoutes');
 const authRoutes = require('./routes/authRoutes');
@@ -81,6 +82,7 @@ const supportRoutes = require('./routes/supportRoutes');
 const aiRoutes = require('./routes/aiRoutes');
 
 app.use('/api/rooms', roomRoutes);
+app.use('/api/hotels', hotelRoutes);
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/auth', authRoutes);

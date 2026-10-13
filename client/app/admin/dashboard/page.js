@@ -1,76 +1,30 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import AdminSidebar from "../components/AdminSidebar";
-import RoomManagement from "../components/RoomManagement";
-import BookingManagement from "../components/BookingManagement";
-import UserManagement from "../components/UserManagement";
-import ReviewManagement from "../components/ReviewManagement";
-import ContactManagement from "../components/ContactManagement";
-import Analytics from "../components/Analytics";
+// ---------------------------------------------------------------------------
+// Legacy admin dashboard route (/admin/dashboard).
+// The admin panel now lives at /admin (new shell + full dashboard). This
+// route only redirects there so the old inner AdminSidebar never renders a
+// duplicate sidebar inside the new layout. No dashboard functionality is
+// lost — /admin has the Analytics dashboard, KPIs, Booking Status, Revenue
+// charts and Recent Activity.
+// ---------------------------------------------------------------------------
 
-export default function AdminDashboard() {
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+
+export default function AdminDashboardLegacyRedirect() {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState("analytics");
-  const [adminEmail, setAdminEmail] = useState("");
-  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
-    const token = localStorage.getItem("adminToken");
-    const email = localStorage.getItem("adminEmail");
-    
-    if (!token) {
-      router.push("/admin/login");
-    } else {
-      setAdminEmail(email || "");
-    }
+    router.replace("/admin");
   }, [router]);
 
   return (
-    <div className="flex h-screen bg-gray-100 overflow-hidden">
-      {/* Mobile Menu Button */}
-      <button
-        onClick={() => setSidebarOpen(!sidebarOpen)}
-        className="lg:hidden fixed top-4 left-4 z-50 p-2 bg-gray-900 text-white rounded-lg"
-      >
-        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          {sidebarOpen ? (
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-          ) : (
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-          )}
-        </svg>
-      </button>
-
-      {/* Sidebar */}
-      <div className={`${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 fixed lg:static inset-y-0 left-0 z-40 transition-transform duration-300 ease-in-out`}>
-        <AdminSidebar 
-          activeTab={activeTab} 
-          setActiveTab={setActiveTab} 
-          adminEmail={adminEmail}
-          onClose={() => setSidebarOpen(false)}
-        />
+    <div className="flex min-h-[60vh] items-center justify-center" role="status" aria-label="Redirecting to dashboard">
+      <div className="text-center">
+        <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-slate-300 border-t-[#2563EB]" />
+        <p className="mt-3 text-[13px] font-semibold text-slate-500">Opening dashboard…</p>
       </div>
-
-      {/* Overlay for mobile */}
-      {sidebarOpen && (
-        <div 
-          className="lg:hidden fixed inset-0 bg-black bg-opacity-50 z-30"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
-      
-      <main className="flex-1 overflow-y-auto">
-        <div className="p-4 lg:p-8 pt-16 lg:pt-8">
-          {activeTab === "analytics" && <Analytics />}
-          {activeTab === "rooms" && <RoomManagement />}
-          {activeTab === "bookings" && <BookingManagement />}
-          {activeTab === "users" && <UserManagement />}
-          {activeTab === "reviews" && <ReviewManagement />}
-          {activeTab === "contacts" && <ContactManagement />}
-        </div>
-      </main>
     </div>
   );
 }

@@ -53,7 +53,7 @@ export default function TestRooms() {
             <h2 className="font-bold">{room.name}</h2>
             <p>ID: {room._id}</p>
             <p>Type: {room.type}</p>
-            <p>Price: ${room.price}</p>
+            <p>Price: ৳{room.price}</p>
             <a 
               href={`/rooms/${room._id}`}
               className="text-blue-600 hover:underline"

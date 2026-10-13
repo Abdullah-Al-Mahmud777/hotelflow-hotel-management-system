@@ -150,7 +150,7 @@ export default function BookingManagement() {
                     {new Date(booking.checkOut).toLocaleDateString()}
                   </td>
                   <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                    ${booking.totalPrice}
+                    ৳{booking.totalPrice}
                   </td>
                   <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
                     <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusBadge(booking.status)}`}>

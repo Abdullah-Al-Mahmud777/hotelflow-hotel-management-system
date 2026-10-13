@@ -60,6 +60,18 @@ const nextConfig = {
       destination: `${BACKEND}/api/${p}/:path*`,
     }));
   },
+
+  // The /dashboard user area was removed — send every old dashboard URL
+  // (/dashboard, /dashboard/bookings, …) to the Rooms listing instead.
+  async redirects() {
+    return [
+      {
+        source: "/dashboard/:path*",
+        destination: "/rooms",
+        permanent: false,
+      },
+    ];
+  },
 };
 
 module.exports = nextConfig;
