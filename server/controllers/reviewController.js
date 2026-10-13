@@ -145,6 +145,70 @@ exports.getUserReviews = async (req, res) => {
   }
 };
 
+// Update Review (owner only; resets status to pending for re-moderation)
+exports.updateReview = async (req, res) => {
+  try {
+    const { rating, comment } = req.body;
+    const review = await Review.findById(req.params.id);
+
+    if (!review) {
+      return res.status(404).json({
+        success: false,
+        message: 'Review not found'
+      });
+    }
+
+    if (review.user.toString() !== req.user.id) {
+      return res.status(403).json({
+        success: false,
+        message: 'Not authorized to edit this review'
+      });
+    }
+
+    if (rating !== undefined) {
+      const r = Number(rating);
+      if (!Number.isInteger(r) || r < 1 || r > 5) {
+        return res.status(400).json({
+          success: false,
+          message: 'Rating must be an integer between 1 and 5'
+        });
+      }
+      review.rating = r;
+    }
+
+    if (comment !== undefined) {
+      if (typeof comment !== 'string' || comment.trim().length < 3) {
+        return res.status(400).json({
+          success: false,
+          message: 'Comment must be at least 3 characters'
+        });
+      }
+      review.comment = comment.trim();
+    }
+
+    // Re-moderate edited reviews
+    review.status = 'pending';
+    review.approvedBy = null;
+    review.approvedAt = null;
+
+    await review.save();
+    await review.populate('room', 'name type image');
+
+    res.status(200).json({
+      success: true,
+      message: 'Review updated and resubmitted for approval',
+      data: review
+    });
+  } catch (error) {
+    console.error('Update review error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to update review',
+      error: error.message
+    });
+  }
+};
+
 // Delete Review
 exports.deleteReview = async (req, res) => {
   try {

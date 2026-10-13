@@ -6,7 +6,9 @@
     "start": "node server.js",
     "dev": "nodemon server.js",
     "seed": "node config/seedRooms.js",
-    "seed:admin": "node config/seedAdmin.js"
+    "seed:admin": "node config/seedAdmin.js",
+    "seed:coupons": "node config/seedCoupons.js",
+    "test": "node --test tests/"
   },
   "keywords": [],
   "author": "",
@@ -21,7 +23,8 @@
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.1.1",
     "multer": "^2.1.1",
-    "multer-storage-cloudinary": "^4.0.0"
+    "multer-storage-cloudinary": "^4.0.0",
+    "pdfkit": "^0.20.2"
   },
   "devDependencies": {
     "nodemon": "^3.1.11"

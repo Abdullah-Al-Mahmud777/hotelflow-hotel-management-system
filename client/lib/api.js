@@ -1,14 +1,16 @@
+// Legacy fetch helper (kept for backward-compat: admin components use `import { api }`)
 const API_URL = 'http://localhost:5000';
 
 // Helper to build API URLs without double slashes
 const buildUrl = (path) => {
-  const baseUrl = (typeof window !== 'undefined' && process.env.NEXT_PUBLIC_API_URL) 
+  const baseUrl = (typeof window !== 'undefined' && process.env.NEXT_PUBLIC_API_URL)
     ? process.env.NEXT_PUBLIC_API_URL.replace(/\/$/, '') // Remove trailing slash
     : API_URL;
   const cleanPath = path.startsWith('/') ? path : `/${path}`;
   return `${baseUrl}${cleanPath}`;
 };
 
+// Legacy fetch helper (kept for backward-compat: admin components use `import { api }`)
 export const api = {
   // Rooms
   async getRooms(filters = {}) {
@@ -18,9 +20,9 @@ export const api = {
     if (filters.maxPrice) params.append('maxPrice', filters.maxPrice);
     if (filters.checkIn) params.append('checkIn', filters.checkIn);
     if (filters.checkOut) params.append('checkOut', filters.checkOut);
-    
+
     const url = `${buildUrl('/api/rooms')}?${params}`;
-    
+
     const res = await fetch(url, {
       method: 'GET',
       headers: {
@@ -28,17 +30,17 @@ export const api = {
       },
       cache: 'no-store'
     });
-    
+
     if (!res.ok) {
       throw new Error(`Failed to fetch rooms: ${res.status}`);
     }
-    
+
     return res.json();
   },
 
   async getFeaturedRooms() {
     const url = buildUrl('/api/rooms/featured');
-    
+
     const res = await fetch(url, {
       method: 'GET',
       headers: {
@@ -46,11 +48,11 @@ export const api = {
       },
       cache: 'no-store'
     });
-    
+
     if (!res.ok) {
       throw new Error(`Failed to fetch featured rooms: ${res.status}`);
     }
-    
+
     return res.json();
   },
 
@@ -62,7 +64,7 @@ export const api = {
         'Content-Type': 'application/json',
       },
     });
-    
+
     if (!res.ok) throw new Error('Failed to fetch room');
     return res.json();
   },
@@ -74,12 +76,12 @@ export const api = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(bookingData)
     });
-    
+
     if (!res.ok) {
       const error = await res.json();
       throw new Error(error.message || 'Failed to create booking');
     }
-    
+
     return res.json();
   },
 
@@ -90,8 +92,12 @@ export const api = {
         'Content-Type': 'application/json',
       },
     });
-    
+
     if (!res.ok) throw new Error('Failed to fetch bookings');
     return res.json();
   }
 };
+
+// ---- Axios instance (canonical implementation lives in ./apiClient.js) ----
+// Re-exported here so `import { apiClient } from "./api"` keeps working.
+export { apiClient, API_BASE_URL, default } from "./apiClient";

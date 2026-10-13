@@ -26,15 +26,20 @@ export default function RoomDetailsPage() {
   const [bookingLoading, setBookingLoading] = useState(false);
   const [bookingError, setBookingError] = useState("");
   const [bookingSuccess, setBookingSuccess] = useState(false);
+  const [couponCode, setCouponCode] = useState("");
+  const [couponQuote, setCouponQuote] = useState(null);
+  const [couponError, setCouponError] = useState("");
+  const [isFavorite, setIsFavorite] = useState(false);
 
   useEffect(() => {
     // Only fetch on client side
     if (typeof window !== 'undefined' && params.id) {
       fetchRoom();
       fetchReviews();
-      
+
       // Pre-fill user data if logged in
       const userData = localStorage.getItem('user');
+      const token = localStorage.getItem('token');
       if (userData) {
         const user = JSON.parse(userData);
         setBookingData(prev => ({
@@ -44,8 +49,84 @@ export default function RoomDetailsPage() {
           guestPhone: user.phone || ''
         }));
       }
+      // Wishlist state + saved room preferences (real user data, best-effort)
+      if (token) {
+        fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/favorites`, {
+          headers: { 'Authorization': `Bearer ${token}` },
+        })
+          .then((r) => r.ok ? r.json() : null)
+          .then((d) => {
+            if (d?.data?.some((f) => String(f.room?._id || f.room) === String(params.id))) setIsFavorite(true);
+          })
+          .catch(() => {});
+        fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/v1/preferences`, {
+          headers: { 'Authorization': `Bearer ${token}` },
+        })
+          .then((r) => r.ok ? r.json() : null)
+          .then((d) => {
+            const prefs = d?.data;
+            if (prefs && !bookingData.specialRequests) {
+              const bits = [prefs.notes, prefs.bedType ? `${prefs.bedType} bed` : '', prefs.dietary].filter(Boolean);
+              if (bits.length > 0) {
+                setBookingData(prev => prev.specialRequests ? prev : { ...prev, specialRequests: bits.join(' · ') });
+              }
+            }
+          })
+          .catch(() => {});
+      }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [params.id]);
+
+  const toggleFavorite = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      router.push('/login');
+      return;
+    }
+    try {
+      const base = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+      if (isFavorite) {
+        await fetch(`${base}/api/favorites/${params.id}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${token}` },
+        });
+        setIsFavorite(false);
+      } else {
+        const r = await fetch(`${base}/api/favorites`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+          body: JSON.stringify({ roomId: params.id }),
+        });
+        if (r.ok || r.status === 409) setIsFavorite(true);
+      }
+    } catch (error) {
+      console.error("Wishlist error:", error);
+    }
+  };
+
+  const applyCouponPreview = async () => {
+    setCouponError("");
+    setCouponQuote(null);
+    if (!couponCode.trim()) return;
+    try {
+      const token = localStorage.getItem('token');
+      const base = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+      const r = await fetch(`${base}/api/rewards/coupons/validate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...(token ? { 'Authorization': `Bearer ${token}` } : {}) },
+        body: JSON.stringify({ code: couponCode.trim(), subtotal: calculateTotalPrice() }),
+      });
+      const data = await r.json();
+      if (r.ok) {
+        setCouponQuote(data.data);
+      } else {
+        setCouponError(data.message || "Invalid coupon");
+      }
+    } catch {
+      setCouponError("Could not validate coupon");
+    }
+  };
 
   const fetchRoom = async () => {
     try {
@@ -149,7 +230,8 @@ export default function RoomDetailsPage() {
         guestPhone: bookingData.guestPhone,
         numberOfGuests: parseInt(bookingData.numberOfGuests),
         specialRequests: bookingData.specialRequests,
-        totalPrice: totalPrice
+        totalPrice: totalPrice,
+        ...(couponCode.trim() ? { couponCode: couponCode.trim().toUpperCase() } : {}),
       };
 
       console.log("Submitting booking:", bookingPayload);
@@ -192,6 +274,9 @@ export default function RoomDetailsPage() {
             numberOfGuests: 1,
             specialRequests: ""
           });
+          setCouponCode("");
+          setCouponQuote(null);
+          setCouponError("");
           router.push("/");
         }, 2000);
       } else {
@@ -266,7 +351,19 @@ export default function RoomDetailsPage() {
               </div>
               
               <div className="md:w-1/2 p-8">
-                <h1 className="text-3xl font-bold text-gray-900 mb-4">{room.name}</h1>
+                <div className="flex items-start justify-between gap-3">
+                  <h1 className="text-3xl font-bold text-gray-900 mb-4">{room.name}</h1>
+                  <button
+                    onClick={toggleFavorite}
+                    aria-label={isFavorite ? `Remove ${room.name} from wishlist` : `Save ${room.name} to wishlist`}
+                    aria-pressed={isFavorite}
+                    className={`shrink-0 rounded-full p-2.5 shadow transition ${isFavorite ? "bg-red-600 text-white" : "bg-gray-100 text-gray-500 hover:text-red-600"}`}
+                  >
+                    <svg className={`w-5 h-5 ${isFavorite ? "fill-current" : ""}`} fill={isFavorite ? "currentColor" : "none"} stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                    </svg>
+                  </button>
+                </div>
                 
                 <div className="space-y-4 mb-6">
                   <div className="flex items-center space-x-2">
@@ -501,6 +598,35 @@ export default function RoomDetailsPage() {
                     rows="3"
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-900"
                   />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Coupon Code (Optional)</label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={couponCode}
+                      onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                      placeholder="WELCOME10"
+                      aria-label="Coupon code"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-900 uppercase"
+                    />
+                    <button
+                      type="button"
+                      onClick={applyCouponPreview}
+                      className="shrink-0 px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50"
+                    >
+                      Apply
+                    </button>
+                  </div>
+                  {couponQuote && (
+                    <p className="mt-1 text-sm font-medium text-green-700">
+                      {couponQuote.code}: −${couponQuote.discount} (total ${couponQuote.total})
+                    </p>
+                  )}
+                  {couponError && (
+                    <p className="mt-1 text-sm text-red-600">{couponError}</p>
+                  )}
                 </div>
 
                 {days > 0 && (

@@ -3,19 +3,35 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
+import { Heart, GitCompare, X } from "lucide-react";
 import Navbar from "../components/Navbar";
 import { LoadingSpinner } from "../components/Loading";
+import { apiClient } from "../../lib/apiClient";
+
+const MAX_COMPARE = 3;
 
 export default function RoomsPage() {
+  const router = useRouter();
   const [rooms, setRooms] = useState([]);
   const [filteredRooms, setFilteredRooms] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedType, setSelectedType] = useState("all");
   const [priceRange, setPriceRange] = useState({ min: 0, max: 1000 });
+  const [favIds, setFavIds] = useState(new Set());
+  const [compareIds, setCompareIds] = useState([]);
+  const [favBusy, setFavBusy] = useState(null);
+
+  const authed = () => typeof window !== "undefined" && !!localStorage.getItem("token");
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
       fetchRooms();
+      if (localStorage.getItem("token")) {
+        apiClient.get("/api/favorites", { params: { limit: 100 } })
+          .then(({ data }) => setFavIds(new Set((data.data || []).map((f) => String(f.room?._id || f.room)))))
+          .catch(() => {});
+      }
     }
   }, []);
 
@@ -42,6 +58,38 @@ export default function RoomsPage() {
       setLoading(false);
     }
   };
+
+  const toggleFavorite = async (roomId) => {
+    if (!authed()) {
+      router.push("/login");
+      return;
+    }
+    if (favBusy) return;
+    setFavBusy(roomId);
+    try {
+      if (favIds.has(roomId)) {
+        await apiClient.delete(`/api/favorites/${roomId}`);
+        setFavIds((prev) => new Set([...prev].filter((x) => x !== roomId)));
+      } else {
+        await apiClient.post("/api/favorites", { roomId });
+        setFavIds((prev) => new Set([...prev, roomId]));
+      }
+    } catch (error) {
+      console.error("Wishlist error:", error?.response?.data || error.message);
+    } finally {
+      setFavBusy(null);
+    }
+  };
+
+  const toggleCompare = (roomId) => {
+    setCompareIds((prev) => {
+      if (prev.includes(roomId)) return prev.filter((x) => x !== roomId);
+      if (prev.length >= MAX_COMPARE) return prev;
+      return [...prev, roomId];
+    });
+  };
+
+  const compareRooms = rooms.filter((r) => compareIds.includes(String(r._id)));
 
   const filterRooms = () => {
     let filtered = [...rooms];
@@ -154,6 +202,25 @@ export default function RoomsPage() {
                   <div className="absolute top-4 right-4 bg-blue-600 text-white px-3 py-1 rounded-full text-sm font-bold">
                     {room.type}
                   </div>
+                  <div className="absolute top-4 left-4 flex gap-2">
+                    <button
+                      onClick={() => toggleFavorite(String(room._id))}
+                      disabled={favBusy === String(room._id)}
+                      aria-label={favIds.has(String(room._id)) ? `Remove ${room.name} from wishlist` : `Save ${room.name} to wishlist`}
+                      aria-pressed={favIds.has(String(room._id))}
+                      className={`rounded-full p-2 shadow transition disabled:opacity-50 ${favIds.has(String(room._id)) ? "bg-red-600 text-white" : "bg-white/90 text-slate-600 hover:text-red-600"}`}
+                    >
+                      <Heart className={`w-4 h-4 ${favIds.has(String(room._id)) ? "fill-current" : ""}`} />
+                    </button>
+                    <button
+                      onClick={() => toggleCompare(String(room._id))}
+                      aria-pressed={compareIds.includes(String(room._id))}
+                      aria-label={`Add ${room.name} to comparison`}
+                      className={`rounded-full p-2 shadow transition ${compareIds.includes(String(room._id)) ? "bg-slate-900 text-white" : "bg-white/90 text-slate-600 hover:text-slate-900"}`}
+                    >
+                      <GitCompare className="w-4 h-4" />
+                    </button>
+                  </div>
                 </div>
 
                 <div className="p-6">
@@ -192,6 +259,35 @@ export default function RoomsPage() {
             </div>
           )}
         </div>
+
+        {/* Compare tray */}
+        {compareRooms.length > 0 && (
+          <div className="fixed bottom-4 left-1/2 z-40 w-[calc(100%-2rem)] max-w-3xl -translate-x-1/2 rounded-2xl border border-slate-200 bg-white p-4 shadow-xl" role="region" aria-label="Compare selected rooms">
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-sm font-bold text-slate-900">
+                Compare ({compareRooms.length}/{MAX_COMPARE})
+              </p>
+              <button onClick={() => setCompareIds([])} className="text-xs font-medium text-slate-500 hover:text-slate-900">
+                Clear all
+              </button>
+            </div>
+            <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-3">
+              {compareRooms.map((r) => (
+                <div key={r._id} className="flex items-center justify-between gap-2 rounded-xl bg-slate-50 px-3 py-2 text-sm">
+                  <span className="truncate font-medium text-slate-900">{r.name} · ${r.price}</span>
+                  <button onClick={() => toggleCompare(String(r._id))} aria-label={`Remove ${r.name} from comparison`} className="text-slate-400 hover:text-red-600">
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              ))}
+            </div>
+            {compareRooms.length >= 2 && (
+              <p className="mt-2 text-xs text-slate-500">
+                Full side-by-side table lives in Dashboard → Wishlist & Compare.
+              </p>
+            )}
+          </div>
+        )}
       </main>
     </>
   );
