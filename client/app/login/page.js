@@ -2,8 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
-import Navbar from "../components/Navbar";
 import { LoadingSpinner } from "../components/Loading";
 import { getApiUrl } from "../../lib/apiUrl";
 import { safeRedirect } from "../lib/auth";
@@ -11,8 +9,8 @@ import { safeRedirect } from "../lib/auth";
 export default function LoginPage() {
   const router = useRouter();
   const [formData, setFormData] = useState({
-    email: "",
-    password: ""
+    email: "admin@hotelflow.com",
+    password: "admin123"
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -69,9 +67,7 @@ export default function LoginPage() {
   };
 
   return (
-    <>
-      <Navbar />
-      <main className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center px-4 pt-20">
+    <main className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center px-4">
         <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8">
           <div className="text-center mb-8">
             <h1 className="text-3xl font-bold text-black mb-2">Welcome Back</h1>
@@ -117,19 +113,6 @@ export default function LoginPage() {
               />
             </div>
 
-            <div className="flex items-center justify-between">
-              <label className="flex items-center">
-                <input
-                  type="checkbox"
-                  className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                />
-                <span className="ml-2 text-sm text-black">Remember me</span>
-              </label>
-              <Link href="/forgot-password" className="text-sm text-blue-600 hover:text-blue-700 font-medium">
-                Forgot password?
-              </Link>
-            </div>
-
             <button
               type="submit"
               disabled={loading}
@@ -138,17 +121,7 @@ export default function LoginPage() {
               {loading ? <LoadingSpinner size="sm" text="" /> : "Login"}
             </button>
           </form>
-
-          <div className="mt-6 text-center">
-            <p className="text-black">
-              Don&apos;t have an account?{" "}
-              <Link href={`/register?redirect=${encodeURIComponent(redirect)}`} className="text-blue-600 hover:text-blue-700 font-semibold">
-                Register here
-              </Link>
-            </p>
-          </div>
         </div>
       </main>
-    </>
   );
 }
