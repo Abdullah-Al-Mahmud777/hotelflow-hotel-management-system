@@ -130,15 +130,67 @@ hotelflow/
 ```env
 MONGO_URI=mongodb+srv://...
 PORT=5000
-JWT_SECRET=your_secret
 NODE_ENV=development
+JWT_SECRET=your_secret
+JWT_EXPIRES_IN=30d
 FRONTEND_URL=http://localhost:3000
+CLIENT_URLS=http://localhost:3000
+ALLOW_VERCEL_PREVIEWS=false
+
+# Demo accounts (auto-created; passwords are bcrypt-hashed in MongoDB)
+DEMO_LOGIN_ENABLED=true
+DEMO_ADMIN_EMAIL=admin@hotelflow.com
+DEMO_ADMIN_PASSWORD=admin123
+DEMO_USER_EMAIL=user@hotelflow.com
+DEMO_USER_PASSWORD=user123
 ```
 
 ### Frontend (.env.local)
 ```env
 NEXT_PUBLIC_API_URL=http://localhost:5000
 ```
+
+---
+
+## 🔐 Authentication & Demo Accounts
+
+- **Separate portals:** `/login` has User/Admin tabs; `/admin/login` is the dedicated admin entry.
+- **Default demo accounts** (created automatically on first backend start):
+  - Admin — `admin@hotelflow.com` / `admin123`
+  - User — `user@hotelflow.com` / `user123`
+- Passwords are hashed with bcrypt (cost 12) before storage. The login page
+  fetches demo credentials from `GET /api/auth/demo-credentials` instead of
+  hardcoding them in the client bundle.
+- **Role-based access:** admin APIs require a valid JWT with `role: admin`;
+  user dashboard APIs are scoped to the authenticated user. Public registration
+  can only create regular users. Inventory writes and image uploads are admin-only.
+- **Sessions:** JWT bearer token (30 days, configurable) plus an httpOnly,
+  `SameSite=None` cookie in production (cleared on logout).
+- **Production safety:** set a strong `JWT_SECRET`, change the demo passwords
+  (or set `DEMO_LOGIN_ENABLED=false` after testing), and set `FRONTEND_URL`
+  to your deployed frontend domain.
+
+### Deploying authentication changes
+
+1. **Backend (Vercel → `server/`)**
+   - Add `MONGO_URI`, `JWT_SECRET`, `FRONTEND_URL`, and the `DEMO_*` variables
+     from `server/.env.production.example`.
+   - Redeploy. The first request connects to Atlas and idempotently creates the
+     demo accounts (hashed); subsequent cold starts reuse the cached connection.
+2. **Frontend (Vercel → `client/`)**
+   - Set `NEXT_PUBLIC_API_URL` to the backend deployment URL.
+   - Redeploy after changing environment variables (Next.js inlines public env
+     vars at build time).
+3. **Verify live:**
+   - Open `/login` and confirm both demo credential cards are visible.
+   - Log in as the user → lands on `/user/dashboard`.
+   - Log in as the admin → lands on `/admin`; `/api/admin/users` returns 200.
+   - Log out, then confirm a protected page redirects to `/login`.
+   - Try an invalid password (401) and a user token on an admin endpoint (403).
+
+> Tip: Vercel preview URLs are blocked by default. Set
+> `ALLOW_VERCEL_PREVIEWS=true` only if you need every `*.vercel.app` preview
+> origin to access the API; otherwise list exact origins in `CLIENT_URLS`.
 
 ---
 ### feature 

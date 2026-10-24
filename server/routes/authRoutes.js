@@ -6,6 +6,8 @@ const { protect } = require('../middlewares/auth');
 // Public routes
 router.post('/register', authController.register);
 router.post('/login', authController.login);
+router.post('/logout', authController.logout);
+router.get('/demo-credentials', authController.getDemoCredentials);
 
 // Protected routes
 router.get('/me', protect, authController.getCurrentUser);

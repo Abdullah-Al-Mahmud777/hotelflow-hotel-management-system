@@ -4,17 +4,33 @@ const mongoose = require("mongoose");
 const path = require("path");
 require("dotenv").config();
 
+const initializeDatabase = require("./config/initDb");
+
 const app = express();
+
+// Start connecting immediately; requests also await this below so serverless
+// cold starts never run a query before MongoDB is ready.
+initializeDatabase().catch((err) =>
+  console.error("Database initialisation failed:", err.message)
+);
 
 // ===== 1. CORS — MUST come before all routes =====
 // Dev: Next.js Turbopack on :3000/:3001. Prod: FRONTEND_URL + Vercel previews.
+const configuredOrigins = [
+  process.env.FRONTEND_URL,
+  process.env.CLIENT_URLS,
+  'https://hotelflow-hotel-management-system-d.vercel.app',
+  'https://hotelflow-hotel-management-system.vercel.app',
+]
+  .filter(Boolean)
+  .flatMap((value) => String(value).split(','))
+  .map((value) => value.trim())
+  .filter(Boolean);
+
 const allowedOrigins = process.env.NODE_ENV === 'production'
-  ? [
-      process.env.FRONTEND_URL,
-      'https://hotelflow-hotel-management-system-d.vercel.app',
-      'https://hotelflow-hotel-management-system.vercel.app'
-    ].filter(Boolean)
+  ? configuredOrigins
   : [
+      ...configuredOrigins,
       'http://localhost:3000',
       'http://localhost:3001',
       'http://127.0.0.1:3000',
@@ -27,7 +43,9 @@ const corsOptions = {
     if (process.env.NODE_ENV !== 'production' && origin.includes('localhost')) {
       return callback(null, true);
     }
-    if (origin && origin.includes('.vercel.app')) {
+    const allowVercelPreviews =
+      String(process.env.ALLOW_VERCEL_PREVIEWS || 'false').toLowerCase() === 'true';
+    if (allowVercelPreviews && origin.includes('.vercel.app')) {
       return callback(null, true);
     }
     if (allowedOrigins.indexOf(origin) !== -1) {
@@ -60,11 +78,21 @@ app.use((req, res, next) => {
 // Serve uploaded files
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// MongoDB Atlas connection
-mongoose
-  .connect(process.env.MONGO_URI)
-  .then(() => console.log("MongoDB Atlas connected ✅ (Database: hotelflow_db)"))
-  .catch((err) => console.log("MongoDB Atlas connection error:", err));
+// ===== 4. Database readiness — await connection + demo seeding per request =====
+// (Serverless functions can receive a request before the module-level connect
+// resolves; this guarantees models never run against a disconnected client.)
+app.use('/api', async (req, res, next) => {
+  try {
+    await initializeDatabase();
+    next();
+  } catch (err) {
+    console.error('Database unavailable:', err.message);
+    res.status(503).json({
+      success: false,
+      message: 'Database temporarily unavailable. Please try again.',
+    });
+  }
+});
 
 // Routes
 const roomRoutes = require('./routes/roomRoutes');
@@ -132,17 +160,21 @@ app.use((req, res) => {
   });
 });
 
-// Start the server
+// Start the server for local/long-running environments. On Vercel the app is
+// exported as a serverless handler, so listening is unnecessary (and can
+// interfere with the platform runtime).
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  const environment = process.env.NODE_ENV === 'production' ? 'Production' : 'Development';
-  console.log(`🚀 HotelFlow API Server running in ${environment} mode`);
-  console.log(`📡 Port: ${PORT}`);
-  console.log(`🌐 Local: http://localhost:${PORT}`);
-  if (process.env.NODE_ENV === 'production') {
-    console.log(`🔗 Production URL: Check Vercel Dashboard`);
-  }
-});
+if (require.main === module) {
+  app.listen(PORT, () => {
+    const environment = process.env.NODE_ENV === 'production' ? 'Production' : 'Development';
+    console.log(`🚀 HotelFlow API Server running in ${environment} mode`);
+    console.log(`📡 Port: ${PORT}`);
+    console.log(`🌐 Local: http://localhost:${PORT}`);
+    if (process.env.NODE_ENV === 'production') {
+      console.log(`🔗 Production URL: Check Vercel Dashboard`);
+    }
+  });
+}
 
 // Export for Vercel
 module.exports = app;

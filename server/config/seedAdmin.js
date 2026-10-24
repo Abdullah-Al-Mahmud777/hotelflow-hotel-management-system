@@ -1,37 +1,20 @@
 const mongoose = require('mongoose');
-const User = require('../models/User');
+const connectDB = require('./db');
+const { ensureDemoUsers } = require('./seedDemoUsers');
 require('dotenv').config();
 
 const seedAdmin = async () => {
   try {
-    await mongoose.connect(process.env.MONGO_URI);
-    console.log('MongoDB connected');
-
-    // Check if admin already exists
-    const existingAdmin = await User.findOne({ email: 'admin@hotelflow.com' });
-    
-    if (existingAdmin) {
-      console.log('Admin user already exists');
-      process.exit(0);
+    await connectDB();
+    const results = await ensureDemoUsers();
+    console.log('✅ Demo accounts seeded successfully');
+    for (const r of results) {
+      console.log(`- ${r.role}: ${r.email} (${r.action})`);
     }
-
-    // Create admin user
-    const admin = await User.create({
-      name: 'Admin',
-      email: 'admin@hotelflow.com',
-      phone: '+1234567890',
-      password: 'admin123',
-      role: 'admin',
-      isActive: true
-    });
-
-    console.log('✅ Admin user created successfully');
-    console.log('Email: admin@hotelflow.com');
-    console.log('Password: admin123');
-    
+    await mongoose.disconnect();
     process.exit(0);
   } catch (error) {
-    console.error('Error seeding admin:', error);
+    console.error('Error seeding demo accounts:', error);
     process.exit(1);
   }
 };

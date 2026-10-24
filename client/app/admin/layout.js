@@ -19,6 +19,8 @@ import Topbar from "../components/admin/Topbar";
 import { Toaster, toast } from "../components/admin/Toast";
 import { adminFetch, normalizeBooking, DUMMY_BOOKINGS, DUMMY_USERS } from "../components/admin/dummy";
 import { formatTimeAgo } from "../lib/format";
+import { getApiUrl } from "../../lib/apiUrl";
+import { logout } from "../lib/auth";
 
 const TITLES = {
   "/admin": { title: "Dashboard", crumb: ["Admin", "Dashboard"] },
@@ -70,12 +72,43 @@ export default function AdminLayout({ children }) {
   // inside an effect, so the lint rule is silenced here on purpose.
   useEffect(() => {
     const a = readAdmin();
-    if (!a) router.replace("/admin/login");
-    else {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setAdmin(a);
-      setAllowed(true);
+    if (!a) {
+      router.replace("/admin/login");
+      return;
     }
+
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setAdmin(a);
+    setAllowed(true);
+
+    // Confirm with the backend that the token is still valid and admin.
+    // Only revoke on an explicit denial — keep working offline if the API is
+    // temporarily unreachable (dashboard already has a dummy-data fallback).
+    const token =
+      localStorage.getItem("adminToken") || localStorage.getItem("token");
+    if (!token) return;
+
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(getApiUrl("/api/auth/me"), {
+          headers: { Authorization: `Bearer ${token}` },
+          cache: "no-store",
+        });
+        const data = await res.json().catch(() => null);
+        if (cancelled) return;
+        if (!res.ok || data?.user?.role !== "admin") {
+          logout();
+          router.replace("/admin/login");
+        }
+      } catch {
+        /* offline or backend restarting — keep the local session */
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
   }, [router]);
 
   // Theme: restore + apply .dark on <html> (external store sync — see above).
@@ -180,9 +213,7 @@ export default function AdminLayout({ children }) {
   }, [query, index]);
 
   const handleLogout = () => {
-    localStorage.removeItem("adminToken");
-    localStorage.removeItem("adminEmail");
-    localStorage.removeItem("adminUser");
+    logout();
     toast.info("Logged out of the admin panel.");
     router.replace("/admin/login");
   };

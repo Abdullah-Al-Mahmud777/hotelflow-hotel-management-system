@@ -1,90 +1,118 @@
 const User = require('../models/User');
-const jwt = require('jsonwebtoken');
+const {
+  signToken,
+  setAuthCookie,
+  clearAuthCookie,
+} = require('../utils/jwt');
+const {
+  getPublicDemoCredentials,
+  demoLoginEnabled,
+} = require('../config/seedDemoUsers');
 
 // Generate JWT Token
-const generateToken = (userId) => {
-  return jwt.sign({ id: userId }, process.env.JWT_SECRET || 'your_secret_key', {
-    expiresIn: '30d'
-  });
-};
+const generateToken = (user) => signToken(user);
+
+const publicUser = (user) => ({
+  id: user._id,
+  name: user.name,
+  email: user.email,
+  phone: user.phone,
+  role: user.role,
+  avatar: user.avatar,
+});
 
 // Register User
 exports.register = async (req, res) => {
   try {
     const { name, email, phone, password } = req.body;
 
-    // Check if user already exists
-    const existingUser = await User.findOne({ email });
-    if (existingUser) {
+    if (!name || !email || !phone || !password) {
       return res.status(400).json({
         success: false,
-        message: 'User with this email already exists'
+        message: 'Name, email, phone and password are required',
       });
     }
 
-    // Create new user
+    const normalizedEmail = String(email).trim().toLowerCase();
+
+    // Check if user already exists
+    const existingUser = await User.findOne({ email: normalizedEmail });
+    if (existingUser) {
+      return res.status(400).json({
+        success: false,
+        message: 'User with this email already exists',
+      });
+    }
+
+    // Public registration can only create regular users, never admins.
     const user = await User.create({
       name,
-      email,
+      email: normalizedEmail,
       phone,
-      password
+      password,
+      role: 'user',
     });
 
-    // Generate token
-    const token = generateToken(user._id);
+    const token = generateToken(user);
+    setAuthCookie(res, token);
 
     res.status(201).json({
       success: true,
       message: 'Registration successful',
       token,
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        phone: user.phone,
-        role: user.role
-      }
+      user: publicUser(user),
     });
   } catch (error) {
     console.error('Registration error:', error);
     res.status(500).json({
       success: false,
       message: 'Registration failed',
-      error: error.message
+      error: error.message,
     });
   }
 };
 
-// Login User
+// Login User — optional `role` scopes the login to the user or admin portal.
 exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
+    const requestedRole =
+      typeof req.body.role === 'string' ? req.body.role.trim().toLowerCase() : '';
 
     // Check if email and password provided
     if (!email || !password) {
       return res.status(400).json({
         success: false,
-        message: 'Please provide email and password'
+        message: 'Please provide email and password',
       });
     }
 
+    if (requestedRole && !['user', 'admin'].includes(requestedRole)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid login role',
+      });
+    }
+
+    const normalizedEmail = String(email).trim().toLowerCase();
+
     // Find user and include password
-    const user = await User.findOne({ email }).select('+password');
-    
+    const user = await User.findOne({ email: normalizedEmail }).select('+password');
+
     if (!user) {
       return res.status(401).json({
         success: false,
-        message: 'Invalid email or password'
+        message: 'Invalid email or password',
       });
     }
 
     // Check if password matches
     const isPasswordCorrect = await user.comparePassword(password);
-    
+
     if (!isPasswordCorrect) {
       return res.status(401).json({
         success: false,
-        message: 'Invalid email or password'
+        message: 'Invalid email or password',
       });
     }
 
@@ -92,34 +120,54 @@ exports.login = async (req, res) => {
     if (!user.isActive) {
       return res.status(401).json({
         success: false,
-        message: 'Your account has been deactivated'
+        message: 'Your account has been deactivated',
       });
     }
 
-    // Generate token
-    const token = generateToken(user._id);
+    // Enforce the portal the visitor chose (separate Admin / User login).
+    if (requestedRole && user.role !== requestedRole) {
+      return res.status(403).json({
+        success: false,
+        message:
+          requestedRole === 'admin'
+            ? 'This account does not have admin access. Use the User login.'
+            : 'This is an admin account. Use the Admin login.',
+      });
+    }
+
+    const token = generateToken(user);
+    setAuthCookie(res, token);
 
     res.status(200).json({
       success: true,
       message: 'Login successful',
       token,
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        phone: user.phone,
-        role: user.role,
-        avatar: user.avatar
-      }
+      user: publicUser(user),
     });
   } catch (error) {
     console.error('Login error:', error);
     res.status(500).json({
       success: false,
       message: 'Login failed',
-      error: error.message
+      error: error.message,
     });
   }
+};
+
+// Logout — clear the httpOnly cookie. The client also clears localStorage.
+exports.logout = async (req, res) => {
+  clearAuthCookie(res);
+  return res.status(200).json({ success: true, message: 'Logged out' });
+};
+
+// Public demo credentials for the login page (demo accounts only).
+exports.getDemoCredentials = async (req, res) => {
+  const enabled = demoLoginEnabled();
+  return res.status(200).json({
+    success: true,
+    enabled,
+    accounts: enabled ? getPublicDemoCredentials() : [],
+  });
 };
 
 // Update Password (verify current password first)
@@ -130,14 +178,14 @@ exports.updatePassword = async (req, res) => {
     if (!currentPassword || !newPassword) {
       return res.status(400).json({
         success: false,
-        message: 'Current and new passwords are required'
+        message: 'Current and new passwords are required',
       });
     }
 
     if (newPassword.length < 6) {
       return res.status(400).json({
         success: false,
-        message: 'New password must be at least 6 characters'
+        message: 'New password must be at least 6 characters',
       });
     }
 
@@ -146,7 +194,7 @@ exports.updatePassword = async (req, res) => {
     if (!user) {
       return res.status(404).json({
         success: false,
-        message: 'User not found'
+        message: 'User not found',
       });
     }
 
@@ -155,7 +203,7 @@ exports.updatePassword = async (req, res) => {
     if (!isCorrect) {
       return res.status(401).json({
         success: false,
-        message: 'Current password is incorrect'
+        message: 'Current password is incorrect',
       });
     }
 
@@ -164,47 +212,44 @@ exports.updatePassword = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: 'Password updated successfully'
+      message: 'Password updated successfully',
     });
   } catch (error) {
     console.error('Update password error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to update password',
-      error: error.message
+      error: error.message,
     });
   }
 };
+
 // Get Current User
 exports.getCurrentUser = async (req, res) => {
   try {
     const user = await User.findById(req.user.id);
-    
+
     if (!user) {
       return res.status(404).json({
         success: false,
-        message: 'User not found'
+        message: 'User not found',
       });
     }
 
     res.status(200).json({
       success: true,
       user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        phone: user.phone,
-        role: user.role,
-        avatar: user.avatar,
-        createdAt: user.createdAt
-      }
+        ...publicUser(user),
+        isActive: user.isActive,
+        createdAt: user.createdAt,
+      },
     });
   } catch (error) {
     console.error('Get user error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to get user',
-      error: error.message
+      error: error.message,
     });
   }
 };
@@ -223,28 +268,21 @@ exports.updateProfile = async (req, res) => {
     if (!user) {
       return res.status(404).json({
         success: false,
-        message: 'User not found'
+        message: 'User not found',
       });
     }
 
     res.status(200).json({
       success: true,
       message: 'Profile updated successfully',
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        phone: user.phone,
-        role: user.role,
-        avatar: user.avatar
-      }
+      user: publicUser(user),
     });
   } catch (error) {
     console.error('Update profile error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to update profile',
-      error: error.message
+      error: error.message,
     });
   }
 };

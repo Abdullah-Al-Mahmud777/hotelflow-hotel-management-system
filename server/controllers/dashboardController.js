@@ -4,6 +4,7 @@ const Room = require('../models/Room');
 const Favorite = require('../models/Favorite');
 const Notification = require('../models/Notification');
 const { notify } = require('../utils/notify');
+const { clearAuthCookie } = require('../utils/jwt');
 const {
   validateStayDates,
   quotePrice,
@@ -519,6 +520,7 @@ exports.updatePreferences = async (req, res) => {
 // JWT is stateless — client discards the token; this endpoint exists for contract/logging.
 exports.logout = async (req, res) => {
   try {
+    clearAuthCookie(res);
     return res.status(200).json({ success: true, message: 'Logged out' });
   } catch (err) {
     console.error('[dashboardController.logout]', err);

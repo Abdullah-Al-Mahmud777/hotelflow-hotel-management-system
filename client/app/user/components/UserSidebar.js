@@ -49,6 +49,9 @@ export default function UserSidebar({ activeTab, setActiveTab, user, unreadCount
     } finally {
       localStorage.removeItem("token");
       localStorage.removeItem("user");
+      localStorage.removeItem("adminToken");
+      localStorage.removeItem("adminEmail");
+      localStorage.removeItem("adminUser");
       setLoggingOut(false);
       router.push("/login");
     }

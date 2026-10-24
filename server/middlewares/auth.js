@@ -1,50 +1,54 @@
-const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const { verifyToken, tokenFromRequest } = require('../utils/jwt');
 
-// Protect routes - verify JWT token
+function unauthorized(res) {
+  return res.status(401).json({
+    success: false,
+    message: 'Not authorized to access this route',
+  });
+}
+
+// Protect routes - verify JWT token (Authorization header or httpOnly cookie)
 exports.protect = async (req, res, next) => {
   try {
-    let token;
-
-    // Check if token exists in headers
-    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
-      token = req.headers.authorization.split(' ')[1];
-    }
+    const token = tokenFromRequest(req);
 
     if (!token) {
-      return res.status(401).json({
-        success: false,
-        message: 'Not authorized to access this route'
-      });
+      return unauthorized(res);
     }
 
+    let decoded;
     try {
-      // Verify token
-      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your_secret_key');
-      
-      // Get user from token
-      req.user = await User.findById(decoded.id);
-      
-      if (!req.user) {
-        return res.status(401).json({
-          success: false,
-          message: 'User not found'
-        });
-      }
-
-      next();
+      decoded = verifyToken(token);
     } catch (error) {
+      return unauthorized(res);
+    }
+
+    // Get user from token
+    const user = await User.findById(decoded.id);
+
+    if (!user) {
       return res.status(401).json({
         success: false,
-        message: 'Not authorized to access this route'
+        message: 'User not found',
       });
     }
+
+    if (!user.isActive) {
+      return res.status(401).json({
+        success: false,
+        message: 'Your account has been deactivated',
+      });
+    }
+
+    req.user = user;
+    return next();
   } catch (error) {
     console.error('Auth middleware error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: 'Server error',
-      error: error.message
+      error: error.message,
     });
   }
 };
@@ -52,20 +56,13 @@ exports.protect = async (req, res, next) => {
 // Optional authentication - attach user if token is present
 exports.optionalAuth = async (req, res, next) => {
   try {
-    let token;
-
-    // Check if token exists in headers
-    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
-      token = req.headers.authorization.split(' ')[1];
-    }
+    const token = tokenFromRequest(req);
 
     if (token) {
       try {
-        // Verify token
-        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your_secret_key');
-        
-        // Get user from token
-        req.user = await User.findById(decoded.id);
+        const decoded = verifyToken(token);
+        const user = await User.findById(decoded.id);
+        if (user && user.isActive) req.user = user;
       } catch (error) {
         // Token invalid, but continue without user
         console.log('Invalid token, continuing without auth');
@@ -82,10 +79,10 @@ exports.optionalAuth = async (req, res, next) => {
 // Restrict to specific roles
 exports.restrictTo = (...roles) => {
   return (req, res, next) => {
-    if (!roles.includes(req.user.role)) {
+    if (!req.user || !roles.includes(req.user.role)) {
       return res.status(403).json({
         success: false,
-        message: 'You do not have permission to perform this action'
+        message: 'You do not have permission to perform this action',
       });
     }
     next();

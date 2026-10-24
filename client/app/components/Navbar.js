@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { logout } from "../lib/auth";
 
 export default function Navbar() {
   const router = useRouter();
@@ -13,13 +14,13 @@ export default function Navbar() {
     // Check if user is logged in
     const userData = localStorage.getItem('user');
     if (userData) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setUser(JSON.parse(userData));
     }
   }, []);
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
+    logout();
     setUser(null);
     router.push('/');
   };

@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const { protect, restrictTo } = require('../middlewares/auth');
 
 // Check if Cloudinary is configured
 const isCloudinaryConfigured = 
@@ -23,7 +24,7 @@ if (isCloudinaryConfigured) {
 }
 
 // Upload single image
-router.post('/image', upload.single('image'), (req, res) => {
+router.post('/image', protect, restrictTo('admin'), upload.single('image'), (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({
@@ -61,7 +62,7 @@ router.post('/image', upload.single('image'), (req, res) => {
 });
 
 // Upload multiple images
-router.post('/images', upload.array('images', 5), (req, res) => {
+router.post('/images', protect, restrictTo('admin'), upload.array('images', 5), (req, res) => {
   try {
     if (!req.files || req.files.length === 0) {
       return res.status(400).json({

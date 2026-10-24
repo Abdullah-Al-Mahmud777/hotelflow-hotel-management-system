@@ -9,6 +9,7 @@
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
+import { logout } from "../../lib/auth";
 import {
   Building2,
   BedDouble,
@@ -50,7 +51,6 @@ export default function Navbar() {
     setMounted(true);
     try {
       const raw = localStorage.getItem("user");
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       if (raw) setUser(JSON.parse(raw));
     } catch {
       setUser(null);
@@ -75,8 +75,7 @@ export default function Navbar() {
   }, [dropOpen]);
 
   const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
+    logout();
     setUser(null);
     router.push("/");
   };
